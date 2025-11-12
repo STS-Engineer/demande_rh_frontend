@@ -3,7 +3,7 @@ import { Calendar, Clock, User, FileText, Send, CheckCircle, AlertCircle } from 
 import './DemandeRHForm.css';
 
 // URL de l'API - utilise la variable d'environnement en production, localhost en développement
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = 'https://hr-back.azurewebsites.net';
 
 export default function DemandeRHForm() {
   const [employees, setEmployees] = useState([]);
