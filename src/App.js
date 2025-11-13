@@ -21,6 +21,7 @@ export default function DemandeRHForm() {
     heure_retour: '',
     demi_journee: false,
     type_conge: '',
+    type_conge_autre: '',
     frais_deplacement: ''
   });
 
@@ -67,6 +68,13 @@ export default function DemandeRHForm() {
       newErrors.type_conge = 'Veuillez sélectionner un type de congé';
     }
 
+    // Si "Autre" est choisi, le champ texte est obligatoire
+    if (formData.type_demande === 'conges' && formData.type_conge === 'autre') {
+      if (!formData.type_conge_autre || !formData.type_conge_autre.trim()) {
+        newErrors.type_conge_autre = 'Veuillez préciser le type de congé';
+      }
+    }
+
     if (formData.type_demande === 'autorisation') {
       if (!formData.heure_depart) newErrors.heure_depart = 'Veuillez saisir l\'heure de départ';
       if (!formData.heure_retour) newErrors.heure_retour = 'Veuillez saisir l\'heure d\'arrivée';
@@ -105,6 +113,10 @@ export default function DemandeRHForm() {
         heure_retour: formData.heure_retour || null,
         frais_deplacement: formData.frais_deplacement ? parseFloat(formData.frais_deplacement) : null,
         type_conge: formData.type_conge || null,
+        type_conge_autre:
+          formData.type_conge === 'autre' && formData.type_conge_autre
+            ? formData.type_conge_autre.trim()
+            : null,
         demi_journee: formData.demi_journee || false
       };
 
@@ -131,6 +143,7 @@ export default function DemandeRHForm() {
             heure_retour: '',
             demi_journee: false,
             type_conge: '',
+            type_conge_autre: '',
             frais_deplacement: ''
           });
         }, 4000);
@@ -171,7 +184,16 @@ export default function DemandeRHForm() {
       heure_retour: '',
       demi_journee: false,
       type_conge: '',
+      type_conge_autre: '',
       frais_deplacement: ''
+    }));
+    setErrors(prev => ({
+      ...prev,
+      date_retour: '',
+      heure_depart: '',
+      heure_retour: '',
+      type_conge: '',
+      type_conge_autre: ''
     }));
   };
 
@@ -329,7 +351,36 @@ export default function DemandeRHForm() {
                       />
                       Congé sans solde
                     </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="type_conge"
+                        value="autre"
+                        checked={formData.type_conge === 'autre'}
+                        onChange={(e) => handleInputChange('type_conge', e.target.value)}
+                        className="radio-input"
+                      />
+                      Autre (à préciser)
+                    </label>
                   </div>
+
+                  {formData.type_conge === 'autre' && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="text"
+                        value={formData.type_conge_autre}
+                        onChange={(e) => handleInputChange('type_conge_autre', e.target.value)}
+                        placeholder="Précisez le type de congé"
+                        className={`form-input ${errors.type_conge_autre ? 'error' : ''}`}
+                      />
+                      {errors.type_conge_autre && (
+                        <div className="error-message">
+                          <AlertCircle size={16} /> {errors.type_conge_autre}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {errors.type_conge && <div className="error-message"><AlertCircle size={16} /> {errors.type_conge}</div>}
                 </div>
               </>
