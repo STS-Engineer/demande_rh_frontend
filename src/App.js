@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, FileText, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Send, CheckCircle, AlertCircle, FileCheck } from 'lucide-react';
 import './DemandeRHForm.css';
 
-// URL de l'API - utilise la variable d'environnement en production, localhost en développement
+// URL de l'API
 const API_BASE_URL = 'https://hr-back.azurewebsites.net';
 
 export default function DemandeRHForm() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAttestation, setLoadingAttestation] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedAttestation, setSubmittedAttestation] = useState(false);
   const [errors, setErrors] = useState({});
   
   const [formData, setFormData] = useState({
@@ -23,6 +25,11 @@ export default function DemandeRHForm() {
     type_conge: '',
     type_conge_autre: '',
     frais_deplacement: ''
+  });
+
+  // État spécifique pour l'attestation de travail
+  const [attestationData, setAttestationData] = useState({
+    employe_id: ''
   });
 
   useEffect(() => {
@@ -158,6 +165,47 @@ export default function DemandeRHForm() {
     }
   };
 
+  // Nouvelle fonction pour gérer la demande d'attestation de travail
+  const handleAttestationSubmit = async () => {
+    if (!attestationData.employe_id) {
+      alert('Veuillez sélectionner un employé pour générer l\'attestation');
+      return;
+    }
+
+    setLoadingAttestation(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/demandes/attestation-travail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employe_id: attestationData.employe_id,
+          type_demande: 'attestation_travail'
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSubmittedAttestation(true);
+        setTimeout(() => {
+          setSubmittedAttestation(false);
+          // Réinitialiser le formulaire d'attestation
+          setAttestationData({
+            employe_id: ''
+          });
+        }, 4000);
+      } else {
+        alert(result.error || 'Erreur lors de la génération de l\'attestation');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoadingAttestation(false);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -171,6 +219,13 @@ export default function DemandeRHForm() {
         [field]: ''
       }));
     }
+  };
+
+  const handleAttestationChange = (field, value) => {
+    setAttestationData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Réinitialiser les champs conditionnels quand le type de demande change
@@ -212,12 +267,86 @@ export default function DemandeRHForm() {
     );
   }
 
+  if (submittedAttestation) {
+    return (
+      <div className="success-container">
+        <div className="success-card">
+          <FileCheck className="success-icon" />
+          <h2 className="success-title">Attestation générée !</h2>
+          <p className="success-message">
+            L'attestation de travail a été générée automatiquement.
+            <br />Elle a été envoyée par email à <strong>majed.messai@avocarbon.com</strong>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="demande-container">
       <div className="demande-form-wrapper">
+        {/* Section Attestation de Travail Rapide */}
+        <div className="demande-card attestation-section">
+          <div className="demande-header">
+            <h1 className="demande-title">
+              <FileCheck size={24} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
+              Attestation de Travail
+            </h1>
+            <p className="demande-subtitle">Générer automatiquement une attestation de travail</p>
+          </div>
+
+          <div className="demande-body">
+            <div className="form-section">
+              <label className="form-label">
+                <User className="form-label-icon" />
+                Employé *
+              </label>
+              <select
+                value={attestationData.employe_id}
+                onChange={(e) => handleAttestationChange('employe_id', e.target.value)}
+                className="form-select"
+              >
+                <option value="">Sélectionnez votre nom</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nom} {emp.prenom} - {emp.poste}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="info-box">
+              <p className="info-text">
+                <strong>Note :</strong> L'attestation sera générée automatiquement selon le template officiel 
+                et envoyée par email à <strong>majed.messai@avocarbon.com</strong>
+              </p>
+            </div>
+
+            <button
+              onClick={handleAttestationSubmit}
+              disabled={loadingAttestation}
+              className="submit-button attestation-button"
+            >
+              {loadingAttestation ? (
+                <div className="loading-spinner">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+              ) : (
+                <>
+                  <FileCheck size={20} />
+                  <span>Générer et Envoyer l'Attestation</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Section Formulaire RH Classique */}
         <div className="demande-card">
           <div className="demande-header">
-            <h1 className="demande-title">Demande RH</h1>
+            <h1 className="demande-title">Demande RH Classique</h1>
             <p className="demande-subtitle">Remplissez le formulaire ci-dessous</p>
           </div>
 
