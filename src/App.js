@@ -48,7 +48,11 @@ export default function DemandeRHForm() {
     if (!formData.employe_id) newErrors.employe_id = 'Veuillez sélectionner un employé';
     if (!formData.type_demande) newErrors.type_demande = 'Veuillez sélectionner un type de demande';
     if (!formData.titre.trim()) newErrors.titre = 'Veuillez saisir le motif de la demande';
-    if (!formData.date_depart) newErrors.date_depart = 'Veuillez saisir la date de départ';
+
+    // Pour les démissions, la date de départ n'est pas obligatoire
+    if (formData.type_demande !== 'demission' && !formData.date_depart) {
+      newErrors.date_depart = 'Veuillez saisir la date de départ';
+    }
 
     // Validation conditionnelle selon le type de demande
     if (formData.type_demande === 'conges' || formData.type_demande === 'mission') {
@@ -108,6 +112,7 @@ export default function DemandeRHForm() {
       const dataToSend = {
         ...formData,
         // Convertir les chaînes vides en null pour les champs optionnels
+        date_depart: formData.type_demande === 'demission' ? null : formData.date_depart,
         date_retour: formData.date_retour || null,
         heure_depart: formData.heure_depart || null,
         heure_retour: formData.heure_retour || null,
@@ -179,6 +184,7 @@ export default function DemandeRHForm() {
       ...prev,
       type_demande: value,
       // Réinitialiser les champs spécifiques au type précédent
+      date_depart: '',
       date_retour: '',
       heure_depart: '',
       heure_retour: '',
@@ -189,6 +195,7 @@ export default function DemandeRHForm() {
     }));
     setErrors(prev => ({
       ...prev,
+      date_depart: '',
       date_retour: '',
       heure_depart: '',
       heure_retour: '',
@@ -204,8 +211,10 @@ export default function DemandeRHForm() {
           <CheckCircle className="success-icon" />
           <h2 className="success-title">Demande envoyée !</h2>
           <p className="success-message">
-            Votre demande a été transmise à votre responsable hiérarchique.
-            <br />Vous recevrez une notification par email.
+            {formData.type_demande === 'demission' 
+              ? 'Votre lettre de démission a été générée et envoyée automatiquement à la direction des ressources humaines. Vous recevrez une copie par email.'
+              : 'Votre demande a été transmise à votre responsable hiérarchique. Vous recevrez une notification par email.'
+            }
           </p>
         </div>
       </div>
@@ -237,6 +246,7 @@ export default function DemandeRHForm() {
                 <option value="autorisation">Autorisation</option>
                 <option value="conges">Congés</option>
                 <option value="mission">Mission</option>
+                <option value="demission">Démission</option>
               </select>
               {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
             </div>
@@ -270,45 +280,56 @@ export default function DemandeRHForm() {
               <textarea
                 value={formData.titre}
                 onChange={(e) => handleInputChange('titre', e.target.value)}
-                rows="3"
-                placeholder="Décrivez le motif de votre demande..."
+                rows={formData.type_demande === 'demission' ? 4 : 3}
+                placeholder={
+                  formData.type_demande === 'demission' 
+                    ? "Veuillez décrire le motif de votre démission..."
+                    : "Décrivez le motif de votre demande..."
+                }
                 className={`form-textarea ${errors.titre ? 'error' : ''}`}
               />
+              {formData.type_demande === 'demission' && (
+                <p className="form-hint">
+                  Une lettre de démission formelle sera automatiquement générée et envoyée à majed.messai@avocarbon.com
+                </p>
+              )}
               {errors.titre && <div className="error-message"><AlertCircle size={16} /> {errors.titre}</div>}
             </div>
 
-            {/* Dates */}
-            <div className="form-grid">
-              <div className="form-section">
-                <label className="form-label">
-                  <Calendar className="form-label-icon" />
-                  Date de départ *
-                </label>
-                <input
-                  type="date"
-                  value={formData.date_depart}
-                  onChange={(e) => handleInputChange('date_depart', e.target.value)}
-                  className={`form-input ${errors.date_depart ? 'error' : ''}`}
-                />
-                {errors.date_depart && <div className="error-message"><AlertCircle size={16} /> {errors.date_depart}</div>}
-              </div>
-
-              {(formData.type_demande === 'conges' || formData.type_demande === 'mission') && (
+            {/* Dates - non affiché pour les démissions */}
+            {formData.type_demande !== 'demission' && (
+              <div className="form-grid">
                 <div className="form-section">
                   <label className="form-label">
                     <Calendar className="form-label-icon" />
-                    Date de retour *
+                    Date de départ *
                   </label>
                   <input
                     type="date"
-                    value={formData.date_retour}
-                    onChange={(e) => handleInputChange('date_retour', e.target.value)}
-                    className={`form-input ${errors.date_retour ? 'error' : ''}`}
+                    value={formData.date_depart}
+                    onChange={(e) => handleInputChange('date_depart', e.target.value)}
+                    className={`form-input ${errors.date_depart ? 'error' : ''}`}
                   />
-                  {errors.date_retour && <div className="error-message"><AlertCircle size={16} /> {errors.date_retour}</div>}
+                  {errors.date_depart && <div className="error-message"><AlertCircle size={16} /> {errors.date_depart}</div>}
                 </div>
-              )}
-            </div>
+
+                {(formData.type_demande === 'conges' || formData.type_demande === 'mission') && (
+                  <div className="form-section">
+                    <label className="form-label">
+                      <Calendar className="form-label-icon" />
+                      Date de retour *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.date_retour}
+                      onChange={(e) => handleInputChange('date_retour', e.target.value)}
+                      className={`form-input ${errors.date_retour ? 'error' : ''}`}
+                    />
+                    {errors.date_retour && <div className="error-message"><AlertCircle size={16} /> {errors.date_retour}</div>}
+                  </div>
+                )}
+              </div>
+            )}
 
             {formData.type_demande === 'conges' && (
               <>
@@ -468,7 +489,7 @@ export default function DemandeRHForm() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="submit-button"
+              className={`submit-button ${formData.type_demande === 'demission' ? 'demission-button' : ''}`}
             >
               {loading ? (
                 <div className="loading-spinner">
@@ -479,7 +500,12 @@ export default function DemandeRHForm() {
               ) : (
                 <>
                   <Send size={20} />
-                  <span>Soumettre la demande</span>
+                  <span>
+                    {formData.type_demande === 'demission' 
+                      ? 'Soumettre la démission' 
+                      : 'Soumettre la demande'
+                    }
+                  </span>
                 </>
               )}
             </button>
