@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, FileText, Send, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import './DemandeRHForm.css';
 
-// URL de l'API
+// URL de l'API - utilise la variable d'environnement en production, localhost en développement
 const API_BASE_URL = 'https://hr-back.azurewebsites.net';
 
 export default function DemandeRHForm() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingEmployees, setLoadingEmployees] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
-  const [apiStatus, setApiStatus] = useState('checking');
   
   const [formData, setFormData] = useState({
     employe_id: '',
@@ -28,55 +26,18 @@ export default function DemandeRHForm() {
   });
 
   useEffect(() => {
-    checkApiStatus();
     fetchEmployees();
   }, []);
 
-  const checkApiStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        setApiStatus('online');
-        console.log('✅ API backend est en ligne');
-      } else {
-        setApiStatus('error');
-        console.error('❌ API backend retourne une erreur');
-      }
-    } catch (error) {
-      setApiStatus('offline');
-      console.error('❌ Impossible de contacter l\'API backend:', error);
-    }
-  };
-
   const fetchEmployees = async () => {
-    setLoadingEmployees(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/employees/actifs`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'omit'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      const response = await fetch(`${API_BASE_URL}/api/employees/actifs`);
+      if (!response.ok) throw new Error('Erreur réseau');
       const data = await response.json();
       setEmployees(data);
-      setLoadingEmployees(false);
     } catch (error) {
-      console.error('Erreur lors du chargement des employés:', error);
-      setLoadingEmployees(false);
-      alert('Erreur de connexion au serveur. Veuillez vérifier que le backend est en ligne.');
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
     }
   };
 
@@ -87,11 +48,7 @@ export default function DemandeRHForm() {
     if (!formData.employe_id) newErrors.employe_id = 'Veuillez sélectionner un employé';
     if (!formData.type_demande) newErrors.type_demande = 'Veuillez sélectionner un type de demande';
     if (!formData.titre.trim()) newErrors.titre = 'Veuillez saisir le motif de la demande';
-
-    // Pour les démissions, la date de départ n'est pas obligatoire
-    if (formData.type_demande !== 'demission' && !formData.date_depart) {
-      newErrors.date_depart = 'Veuillez saisir la date de départ';
-    }
+    if (!formData.date_depart) newErrors.date_depart = 'Veuillez saisir la date de départ';
 
     // Validation conditionnelle selon le type de demande
     if (formData.type_demande === 'conges' || formData.type_demande === 'mission') {
@@ -144,11 +101,6 @@ export default function DemandeRHForm() {
       return;
     }
 
-    if (apiStatus !== 'online') {
-      alert('Le serveur backend n\'est pas disponible. Veuillez réessayer plus tard.');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -156,7 +108,6 @@ export default function DemandeRHForm() {
       const dataToSend = {
         ...formData,
         // Convertir les chaînes vides en null pour les champs optionnels
-        date_depart: formData.type_demande === 'demission' ? null : formData.date_depart,
         date_retour: formData.date_retour || null,
         heure_depart: formData.heure_depart || null,
         heure_retour: formData.heure_retour || null,
@@ -171,12 +122,8 @@ export default function DemandeRHForm() {
 
       const response = await fetch(`${API_BASE_URL}/api/demandes`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(dataToSend),
-        credentials: 'omit'
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
       });
 
       const result = await response.json();
@@ -199,13 +146,13 @@ export default function DemandeRHForm() {
             type_conge_autre: '',
             frais_deplacement: ''
           });
-        }, 5000);
+        }, 4000);
       } else {
-        alert(result.error || 'Erreur lors de la soumission. Code: ' + response.status);
+        alert(result.error || 'Erreur lors de la soumission');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur de connexion au serveur. Veuillez vérifier votre connexion internet.');
+      alert('Erreur de connexion au serveur');
     } finally {
       setLoading(false);
     }
@@ -232,7 +179,6 @@ export default function DemandeRHForm() {
       ...prev,
       type_demande: value,
       // Réinitialiser les champs spécifiques au type précédent
-      date_depart: '',
       date_retour: '',
       heure_depart: '',
       heure_retour: '',
@@ -243,27 +189,12 @@ export default function DemandeRHForm() {
     }));
     setErrors(prev => ({
       ...prev,
-      date_depart: '',
       date_retour: '',
       heure_depart: '',
       heure_retour: '',
       type_conge: '',
       type_conge_autre: ''
     }));
-  };
-
-  // Afficher le statut de l'API
-  const renderApiStatus = () => {
-    switch(apiStatus) {
-      case 'online':
-        return <div className="api-status online">✅ Backend connecté</div>;
-      case 'offline':
-        return <div className="api-status offline">❌ Backend hors ligne</div>;
-      case 'error':
-        return <div className="api-status error">⚠️ Erreur de connexion au backend</div>;
-      default:
-        return <div className="api-status checking">🔄 Vérification du backend...</div>;
-    }
   };
 
   if (submitted) {
@@ -273,17 +204,9 @@ export default function DemandeRHForm() {
           <CheckCircle className="success-icon" />
           <h2 className="success-title">Demande envoyée !</h2>
           <p className="success-message">
-            {formData.type_demande === 'demission' 
-              ? 'Votre lettre de démission a été générée et envoyée automatiquement à la direction des ressources humaines. Vous recevrez une copie par email.'
-              : 'Votre demande a été transmise à votre responsable hiérarchique. Vous recevrez une notification par email.'
-            }
+            Votre demande a été transmise à votre responsable hiérarchique.
+            <br />Vous recevrez une notification par email.
           </p>
-          <button 
-            className="back-button"
-            onClick={() => setSubmitted(false)}
-          >
-            Retour au formulaire
-          </button>
         </div>
       </div>
     );
@@ -296,7 +219,6 @@ export default function DemandeRHForm() {
           <div className="demande-header">
             <h1 className="demande-title">Demande RH</h1>
             <p className="demande-subtitle">Remplissez le formulaire ci-dessous</p>
-            {renderApiStatus()}
           </div>
 
           <div className="demande-body">
@@ -310,13 +232,11 @@ export default function DemandeRHForm() {
                 value={formData.type_demande}
                 onChange={(e) => handleTypeDemandeChange(e.target.value)}
                 className={`form-select ${errors.type_demande ? 'error' : ''}`}
-                disabled={loadingEmployees || apiStatus !== 'online'}
               >
                 <option value="">Sélectionnez un type</option>
                 <option value="autorisation">Autorisation</option>
                 <option value="conges">Congés</option>
                 <option value="mission">Mission</option>
-                <option value="demission">Démission</option>
               </select>
               {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
             </div>
@@ -327,29 +247,19 @@ export default function DemandeRHForm() {
                 <User className="form-label-icon" />
                 Employé *
               </label>
-              {loadingEmployees ? (
-                <div className="loading-employees">
-                  <div className="loading-spinner-small"></div>
-                  <span>Chargement des employés...</span>
-                </div>
-              ) : (
-                <>
-                  <select
-                    value={formData.employe_id}
-                    onChange={(e) => handleInputChange('employe_id', e.target.value)}
-                    className={`form-select ${errors.employe_id ? 'error' : ''}`}
-                    disabled={apiStatus !== 'online'}
-                  >
-                    <option value="">Sélectionnez votre nom</option>
-                    {employees.map(emp => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.nom} {emp.prenom} - {emp.poste}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.employe_id && <div className="error-message"><AlertCircle size={16} /> {errors.employe_id}</div>}
-                </>
-              )}
+              <select
+                value={formData.employe_id}
+                onChange={(e) => handleInputChange('employe_id', e.target.value)}
+                className={`form-select ${errors.employe_id ? 'error' : ''}`}
+              >
+                <option value="">Sélectionnez votre nom</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nom} {emp.prenom} - {emp.poste}
+                  </option>
+                ))}
+              </select>
+              {errors.employe_id && <div className="error-message"><AlertCircle size={16} /> {errors.employe_id}</div>}
             </div>
 
             {/* Motif */}
@@ -360,59 +270,45 @@ export default function DemandeRHForm() {
               <textarea
                 value={formData.titre}
                 onChange={(e) => handleInputChange('titre', e.target.value)}
-                rows={formData.type_demande === 'demission' ? 4 : 3}
-                placeholder={
-                  formData.type_demande === 'demission' 
-                    ? "Veuillez décrire le motif de votre démission..."
-                    : "Décrivez le motif de votre demande..."
-                }
+                rows="3"
+                placeholder="Décrivez le motif de votre demande..."
                 className={`form-textarea ${errors.titre ? 'error' : ''}`}
-                disabled={apiStatus !== 'online'}
               />
-              {formData.type_demande === 'demission' && (
-                <p className="form-hint">
-                  📄 Une lettre de démission formelle sera automatiquement générée et envoyée à majed.messai@avocarbon.com
-                </p>
-              )}
               {errors.titre && <div className="error-message"><AlertCircle size={16} /> {errors.titre}</div>}
             </div>
 
-            {/* Dates - non affiché pour les démissions */}
-            {formData.type_demande !== 'demission' && (
-              <div className="form-grid">
+            {/* Dates */}
+            <div className="form-grid">
+              <div className="form-section">
+                <label className="form-label">
+                  <Calendar className="form-label-icon" />
+                  Date de départ *
+                </label>
+                <input
+                  type="date"
+                  value={formData.date_depart}
+                  onChange={(e) => handleInputChange('date_depart', e.target.value)}
+                  className={`form-input ${errors.date_depart ? 'error' : ''}`}
+                />
+                {errors.date_depart && <div className="error-message"><AlertCircle size={16} /> {errors.date_depart}</div>}
+              </div>
+
+              {(formData.type_demande === 'conges' || formData.type_demande === 'mission') && (
                 <div className="form-section">
                   <label className="form-label">
                     <Calendar className="form-label-icon" />
-                    Date de départ *
+                    Date de retour *
                   </label>
                   <input
                     type="date"
-                    value={formData.date_depart}
-                    onChange={(e) => handleInputChange('date_depart', e.target.value)}
-                    className={`form-input ${errors.date_depart ? 'error' : ''}`}
-                    disabled={apiStatus !== 'online'}
+                    value={formData.date_retour}
+                    onChange={(e) => handleInputChange('date_retour', e.target.value)}
+                    className={`form-input ${errors.date_retour ? 'error' : ''}`}
                   />
-                  {errors.date_depart && <div className="error-message"><AlertCircle size={16} /> {errors.date_depart}</div>}
+                  {errors.date_retour && <div className="error-message"><AlertCircle size={16} /> {errors.date_retour}</div>}
                 </div>
-
-                {(formData.type_demande === 'conges' || formData.type_demande === 'mission') && (
-                  <div className="form-section">
-                    <label className="form-label">
-                      <Calendar className="form-label-icon" />
-                      Date de retour *
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.date_retour}
-                      onChange={(e) => handleInputChange('date_retour', e.target.value)}
-                      className={`form-input ${errors.date_retour ? 'error' : ''}`}
-                      disabled={apiStatus !== 'online'}
-                    />
-                    {errors.date_retour && <div className="error-message"><AlertCircle size={16} /> {errors.date_retour}</div>}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
             {formData.type_demande === 'conges' && (
               <>
@@ -423,7 +319,6 @@ export default function DemandeRHForm() {
                       checked={formData.demi_journee}
                       onChange={(e) => handleInputChange('demi_journee', e.target.checked)}
                       className="checkbox-input"
-                      disabled={apiStatus !== 'online'}
                     />
                     Demi-journée
                   </label>
@@ -442,7 +337,6 @@ export default function DemandeRHForm() {
                         checked={formData.type_conge === 'annuel'}
                         onChange={(e) => handleInputChange('type_conge', e.target.value)}
                         className="radio-input"
-                        disabled={apiStatus !== 'online'}
                       />
                       Congé annuel
                     </label>
@@ -454,7 +348,6 @@ export default function DemandeRHForm() {
                         checked={formData.type_conge === 'sans_solde'}
                         onChange={(e) => handleInputChange('type_conge', e.target.value)}
                         className="radio-input"
-                        disabled={apiStatus !== 'online'}
                       />
                       Congé sans solde
                     </label>
@@ -466,7 +359,6 @@ export default function DemandeRHForm() {
                         checked={formData.type_conge === 'autre'}
                         onChange={(e) => handleInputChange('type_conge', e.target.value)}
                         className="radio-input"
-                        disabled={apiStatus !== 'online'}
                       />
                       Autre (à préciser)
                     </label>
@@ -480,7 +372,6 @@ export default function DemandeRHForm() {
                         onChange={(e) => handleInputChange('type_conge_autre', e.target.value)}
                         placeholder="Précisez le type de congé"
                         className={`form-input ${errors.type_conge_autre ? 'error' : ''}`}
-                        disabled={apiStatus !== 'online'}
                       />
                       {errors.type_conge_autre && (
                         <div className="error-message">
@@ -507,7 +398,6 @@ export default function DemandeRHForm() {
                     value={formData.heure_depart}
                     onChange={(e) => handleInputChange('heure_depart', e.target.value)}
                     className={`form-input ${errors.heure_depart ? 'error' : ''}`}
-                    disabled={apiStatus !== 'online'}
                   />
                   {errors.heure_depart && <div className="error-message"><AlertCircle size={16} /> {errors.heure_depart}</div>}
                 </div>
@@ -521,7 +411,6 @@ export default function DemandeRHForm() {
                     value={formData.heure_retour}
                     onChange={(e) => handleInputChange('heure_retour', e.target.value)}
                     className={`form-input ${errors.heure_retour ? 'error' : ''}`}
-                    disabled={apiStatus !== 'online'}
                   />
                   {errors.heure_retour && <div className="error-message"><AlertCircle size={16} /> {errors.heure_retour}</div>}
                 </div>
@@ -541,7 +430,6 @@ export default function DemandeRHForm() {
                       value={formData.heure_depart}
                       onChange={(e) => handleInputChange('heure_depart', e.target.value)}
                       className={`form-input ${errors.heure_depart ? 'error' : ''}`}
-                      disabled={apiStatus !== 'online'}
                     />
                     {errors.heure_depart && <div className="error-message"><AlertCircle size={16} /> {errors.heure_depart}</div>}
                   </div>
@@ -555,7 +443,6 @@ export default function DemandeRHForm() {
                       value={formData.heure_retour}
                       onChange={(e) => handleInputChange('heure_retour', e.target.value)}
                       className={`form-input ${errors.heure_retour ? 'error' : ''}`}
-                      disabled={apiStatus !== 'online'}
                     />
                     {errors.heure_retour && <div className="error-message"><AlertCircle size={16} /> {errors.heure_retour}</div>}
                   </div>
@@ -573,7 +460,6 @@ export default function DemandeRHForm() {
                     onChange={(e) => handleInputChange('frais_deplacement', e.target.value)}
                     placeholder="0.00"
                     className="form-input"
-                    disabled={apiStatus !== 'online'}
                   />
                 </div>
               </>
@@ -581,8 +467,8 @@ export default function DemandeRHForm() {
 
             <button
               onClick={handleSubmit}
-              disabled={loading || loadingEmployees || apiStatus !== 'online'}
-              className={`submit-button ${formData.type_demande === 'demission' ? 'demission-button' : ''} ${apiStatus !== 'online' ? 'disabled-button' : ''}`}
+              disabled={loading}
+              className="submit-button"
             >
               {loading ? (
                 <div className="loading-spinner">
@@ -593,22 +479,10 @@ export default function DemandeRHForm() {
               ) : (
                 <>
                   <Send size={20} />
-                  <span>
-                    {formData.type_demande === 'demission' 
-                      ? 'Soumettre la démission' 
-                      : 'Soumettre la demande'
-                    }
-                  </span>
+                  <span>Soumettre la demande</span>
                 </>
               )}
             </button>
-
-            {apiStatus !== 'online' && (
-              <div className="api-warning">
-                <AlertCircle size={16} />
-                <span>Le backend n'est pas disponible. Veuillez réessayer plus tard.</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
