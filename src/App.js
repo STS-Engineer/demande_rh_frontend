@@ -298,8 +298,8 @@ export default function DemandeRHForm() {
           <FileCheck className="success-icon" />
           <h2 className="success-title">Document envoyé !</h2>
           <p className="success-message">
-            Votre attestation de travail a été générée et envoyée par email.
-            <br />Elle sera traitée par l'administration.
+            Votre Document a été générée et envoyée par email.
+            <br />Il sera traitée par l'administration.
           </p>
           <button 
             onClick={() => setActiveSection('demandes')}
@@ -609,7 +609,7 @@ export default function DemandeRHForm() {
           <div className="demande-card">
             <div className="demande-header">
               <h1 className="demande-title">Demande de Document</h1>
-              <p className="demande-subtitle">Attestation de Travail</p>
+             
             </div>
 
             <div className="demande-body">
