@@ -657,13 +657,9 @@ export default function DemandeRHForm() {
                 <div className="info-content">
                   <h4>Information importante</h4>
                   <p>
-                    L'attestation de travail sera générée automatiquement à partir de vos données personnelles 
-                    (nom, prénom, poste, date d'embauche) et envoyée directement par email à 
-                    <strong> majed.messai@avocarbon.com</strong>.
+                 L’attestation de travail sera générée automatiquement à partir de vos informations personnelles et envoyée directement par e-mail au responsable RH. Vous pourrez la récupérer auprès de son bureau dans un délai de 24 heures.
                   </p>
-                  <p>
-                    <strong>Note :</strong> Cette demande ne sera pas enregistrée dans le système de demandes RH.
-                  </p>
+                 
                 </div>
               </div>
 
