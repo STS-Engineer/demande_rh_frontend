@@ -356,3 +356,102 @@
   0% { transform: translate(0, 0); }
   100% { transform: translate(24px, 0); }
 }
+/* Styles pour la navigation */
+.navigation-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-button {
+  flex: 1;
+  padding: 15px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.nav-button.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+/* Styles pour la section documents */
+.form-help-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.info-box {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  display: flex;
+  gap: 15px;
+}
+
+.info-icon {
+  color: #0369a1;
+  flex-shrink: 0;
+}
+
+.info-content h4 {
+  margin: 0 0 8px 0;
+  color: #0369a1;
+}
+
+.info-content p {
+  margin: 0 0 10px 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.info-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Bouton pour changer de section dans les messages de succès */
+.section-switch-button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 2px solid #2563eb;
+  color: #2563eb;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.section-switch-button:hover {
+  background: #2563eb;
+  color: white;
+}
