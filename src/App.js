@@ -644,10 +644,7 @@ export default function DemandeRHForm() {
                 >
                   <option value="attestation_travail">Attestation de Travail</option>
                 </select>
-                <p className="form-help-text">
-                  L'attestation de travail sera générée automatiquement avec vos informations 
-                  et envoyée par email à l'administration.
-                </p>
+               
               </div>
 
               <div className="info-box">
