@@ -645,6 +645,7 @@ export default function DemandeRHForm() {
                 >
                   <option value="attestation_travail">Attestation de Travail</option>
                   <option value="attestation_salaire">Attestation de Salaire</option>
+                  <option value="lettre_demission">Lettre de démission</option>
                 </select>
                
               </div>
