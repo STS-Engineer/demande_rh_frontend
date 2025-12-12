@@ -13,6 +13,7 @@
 .demande-form-wrapper {
   max-width: 800px;
   margin: 0 auto;
+  transform: scale(0.8);
 }
 
 .demande-card {
