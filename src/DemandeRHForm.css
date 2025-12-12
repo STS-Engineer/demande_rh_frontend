@@ -20,9 +20,7 @@ html {
 
 .demande-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, 
-    rgba(248, 249, 250, 0.95) 0%,
-    rgba(240, 242, 245, 0.95) 100%),
+  background: 
     url('background.png') no-repeat center center/cover;
   padding: 20px;
   font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
