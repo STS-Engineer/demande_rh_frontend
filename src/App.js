@@ -337,7 +337,7 @@ export default function DemandeRHForm() {
         {activeSection === 'demandes' ? (
           <div className="demande-card">
             <div className="demande-header">
-             <img src="logo_sts.png" alt="Logo" className="header-logo" />
+             <img src="src/logo_sts.png" alt="Logo" className="header-logo" />
             </div>
 
             <div className="demande-body">
