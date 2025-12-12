@@ -1,3 +1,7 @@
+
+html {
+    zoom: 0.8;
+}
 /* DemandeRHForm.css */
 .demande-container {
   min-height: 100vh;
