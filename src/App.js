@@ -656,13 +656,12 @@ export default function DemandeRHForm() {
                 </div>
                 <div className="info-content">
                   <h4>Information importante</h4>
-                    <p>
-                      {documentFormData.type_document === 'attestation_travail' 
-                        ? `L'attestation de travail sera générée automatiquement à partir de vos informations personnelles et envoyée directement par e-mail au responsable RH. Vous pourrez la récupérer auprès de son bureau dans un délai de 24 heures.`
-                        : `L'attestation de salaire sera générée automatiquement avec votre salaire brut annuel (${employees.find(e => e.id === documentFormData.employe_id)?.salaire_brute || '--'} TND) et envoyée directement par e-mail au responsable RH.`
-                      }
-                    </p>
-                 
+                  <p>
+                    Le document sera généré automatiquement à partir de vos informations
+                    personnelles et envoyé directement par e-mail au responsable RH.
+                    Vous pourrez le récupérer auprès de son bureau dans un délai de 24 heures.
+                  </p>
+                               
                 </div>
               </div>
 
