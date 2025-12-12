@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logo from './logo_sts.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
   AlertCircle, FileCheck, Briefcase, File
