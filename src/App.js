@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logo from './logo_sts.png';
+import logoo from './logo_sts2.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
   AlertCircle, FileCheck, Briefcase, File
@@ -338,7 +339,7 @@ export default function DemandeRHForm() {
         {activeSection === 'demandes' ? (
           <div className="demande-card">
             <div className="demande-header">
-             <img src={logo} alt="Logo" className="header-logo" />
+             <img src={logoo} alt="Logo" className="header-logo" />
             </div>
 
             <div className="demande-body">
