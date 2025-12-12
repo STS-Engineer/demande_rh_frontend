@@ -609,7 +609,7 @@ export default function DemandeRHForm() {
         ) : (
           <div className="demande-card">
             <div className="demande-header">
-              <h1 className="demande-title">Demande de Document</h1>
+              <img src={logoo} alt="Logo" className="header-logo" />
              
             </div>
 
