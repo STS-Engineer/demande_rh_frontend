@@ -125,11 +125,6 @@ html {
     transparent 100%);
 }
 
-.header-logo {
-  max-width: 180px;
-  height: auto;
-  filter: brightness(0) invert(1);
-}
 
 .demande-body {
   padding: 40px;
