@@ -325,7 +325,7 @@ export default function DemandeRHForm() {
             onClick={() => setActiveSection('demandes')}
           >
             <Briefcase size={20} />
-            Demandes RH
+            Demandes 
           </button>
           <button 
             className={`nav-button ${activeSection === 'documents' ? 'active' : ''}`}
