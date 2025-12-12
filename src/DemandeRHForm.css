@@ -6,7 +6,7 @@
     url('background.png') no-repeat center center/cover;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transform: scale(0.8);
+ 
 }
 
 
@@ -50,6 +50,7 @@
 .form-section {
   margin-bottom: 30px;
   animation: fadeIn 0.8s ease-out;
+  transform: scale(0.8);
 }
 
 .form-label {
