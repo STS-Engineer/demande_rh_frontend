@@ -6,6 +6,7 @@
     url('background.png') no-repeat center center/cover;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transform: scale(0.8);
 }
 
 
