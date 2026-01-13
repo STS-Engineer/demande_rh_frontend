@@ -3,12 +3,129 @@ import logo from './logo_sts.png';
 import logoo from './logo_sts2.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
-  AlertCircle, FileCheck, Briefcase, File
+  AlertCircle, FileCheck, Briefcase, File, Search
 } from 'lucide-react';
 import './DemandeRHForm.css';
 
 // URL de l'API - utilise la variable d'environnement en production, localhost en développement
 const API_BASE_URL = 'https://hr-back.azurewebsites.net';
+
+// Composant réutilisable pour la recherche d'employés
+const EmployeeSearchInput = ({
+  searchTerm,
+  setSearchTerm,
+  filteredEmployees,
+  showDropdown,
+  setShowDropdown,
+  selectedEmployee,
+  setSelectedEmployee,
+  errors,
+  fieldName,
+  placeholder = "Rechercher un employé...",
+  onEmployeeSelect
+}) => {
+  const handleEmployeeSelect = (employee) => {
+    setSelectedEmployee({
+      id: employee.id,
+      name: `${employee.nom} ${employee.prenom}`,
+      nom: employee.nom,
+      prenom: employee.prenom
+    });
+    setSearchTerm(`${employee.nom} ${employee.prenom} - ${employee.poste}`);
+    setShowDropdown(false);
+    
+    if (onEmployeeSelect) {
+      onEmployeeSelect(employee.id);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Si l'utilisateur efface le champ, réinitialiser la sélection
+    if (value.trim() === '') {
+      setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+      if (onEmployeeSelect) {
+        onEmployeeSelect('');
+      }
+    }
+    
+    if (value.trim() === '') {
+      setShowDropdown(false);
+    } else {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setShowDropdown(false);
+    }, 200);
+  };
+
+  const handleFocus = () => {
+    if (searchTerm.trim() !== '' && filteredEmployees.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  return (
+    <div className="employee-search-container">
+      <label className="form-label">
+        <User className="form-label-icon" />
+        Employé *
+      </label>
+      <div className="search-input-wrapper">
+        <div className="search-input-group">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            className={`form-input ${errors[fieldName] ? 'error' : ''}`}
+          />
+        </div>
+        {errors[fieldName] && (
+          <div className="error-message">
+            <AlertCircle size={16} /> {errors[fieldName]}
+          </div>
+        )}
+        
+        {showDropdown && filteredEmployees.length > 0 && (
+          <div className="employee-dropdown">
+            {filteredEmployees.map(emp => (
+              <div
+                key={emp.id}
+                className="dropdown-item"
+                onClick={() => handleEmployeeSelect(emp)}
+              >
+                <div className="employee-name">
+                  {emp.nom} {emp.prenom}
+                </div>
+                <div className="employee-poste">
+                  {emp.poste}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {showDropdown && filteredEmployees.length === 0 && searchTerm.trim() !== '' && (
+          <div className="employee-dropdown">
+            <div className="dropdown-item no-results">
+              <AlertCircle size={16} style={{ marginRight: '8px' }} />
+              Aucun employé trouvé
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function DemandeRHForm() {
   const [activeSection, setActiveSection] = useState('demandes'); // 'demandes' ou 'documents'
@@ -17,6 +134,28 @@ export default function DemandeRHForm() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   
+  // États pour la recherche d'employés (section demandes)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState({ 
+    id: '', 
+    name: '', 
+    nom: '', 
+    prenom: '' 
+  });
+
+  // États pour la recherche d'employés (section documents)
+  const [documentSearchTerm, setDocumentSearchTerm] = useState('');
+  const [documentFilteredEmployees, setDocumentFilteredEmployees] = useState([]);
+  const [documentShowDropdown, setDocumentShowDropdown] = useState(false);
+  const [documentSelectedEmployee, setDocumentSelectedEmployee] = useState({ 
+    id: '', 
+    name: '', 
+    nom: '', 
+    prenom: '' 
+  });
+
   // États pour la section demandes
   const [demandeFormData, setDemandeFormData] = useState({
     employe_id: '',
@@ -57,9 +196,64 @@ export default function DemandeRHForm() {
     }
   };
 
+  // Filtrage des employés pour la section demandes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredEmployees([]);
+    } else {
+      const filtered = employees.filter(emp => {
+        const fullName = `${emp.nom} ${emp.prenom}`.toLowerCase();
+        const fullNameWithPoste = `${emp.nom} ${emp.prenom} - ${emp.poste}`.toLowerCase();
+        const search = searchTerm.toLowerCase();
+        
+        return fullName.includes(search) || 
+               fullNameWithPoste.includes(search) ||
+               emp.nom.toLowerCase().includes(search) || 
+               emp.prenom.toLowerCase().includes(search) ||
+               emp.poste.toLowerCase().includes(search);
+      });
+      setFilteredEmployees(filtered);
+    }
+  }, [searchTerm, employees]);
+
+  // Filtrage des employés pour la section documents
+  useEffect(() => {
+    if (documentSearchTerm.trim() === '') {
+      setDocumentFilteredEmployees([]);
+    } else {
+      const filtered = employees.filter(emp => {
+        const fullName = `${emp.nom} ${emp.prenom}`.toLowerCase();
+        const fullNameWithPoste = `${emp.nom} ${emp.prenom} - ${emp.poste}`.toLowerCase();
+        const search = documentSearchTerm.toLowerCase();
+        
+        return fullName.includes(search) || 
+               fullNameWithPoste.includes(search) ||
+               emp.nom.toLowerCase().includes(search) || 
+               emp.prenom.toLowerCase().includes(search) ||
+               emp.poste.toLowerCase().includes(search);
+      });
+      setDocumentFilteredEmployees(filtered);
+    }
+  }, [documentSearchTerm, employees]);
+
   // ============================================
   // FONCTIONS POUR LA SECTION DEMANDES
   // ============================================
+
+  const handleEmployeeSelect = (employeeId) => {
+    setDemandeFormData(prev => ({
+      ...prev,
+      employe_id: employeeId
+    }));
+    
+    // Effacer l'erreur du champ employé si elle existe
+    if (errors.employe_id) {
+      setErrors(prev => ({
+        ...prev,
+        employe_id: ''
+      }));
+    }
+  };
 
   const validateDemandeForm = () => {
     const newErrors = {};
@@ -117,6 +311,15 @@ export default function DemandeRHForm() {
   };
 
   const handleDemandeSubmit = async () => {
+    // Validation de l'employé sélectionné
+    if (!selectedEmployee.id) {
+      setErrors(prev => ({
+        ...prev,
+        employe_id: 'Veuillez sélectionner un employé'
+      }));
+      return;
+    }
+
     if (!validateDemandeForm()) {
       return;
     }
@@ -127,6 +330,7 @@ export default function DemandeRHForm() {
       // Préparer les données pour l'envoi
       const dataToSend = {
         ...demandeFormData,
+        employe_id: selectedEmployee.id,
         // Convertir les chaînes vides en null pour les champs optionnels
         date_retour: demandeFormData.date_retour || null,
         heure_depart: demandeFormData.heure_depart || null,
@@ -166,6 +370,10 @@ export default function DemandeRHForm() {
             type_conge_autre: '',
             frais_deplacement: ''
           });
+          // Réinitialiser la recherche
+          setSearchTerm('');
+          setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+          setFilteredEmployees([]);
         }, 4000);
       } else {
         alert(result.error || 'Erreur lors de la soumission');
@@ -221,9 +429,16 @@ export default function DemandeRHForm() {
   // FONCTIONS POUR LA SECTION DOCUMENTS
   // ============================================
 
+  const handleDocumentEmployeeSelect = (employeeId) => {
+    setDocumentFormData(prev => ({
+      ...prev,
+      employe_id: employeeId
+    }));
+  };
+
   const handleDocumentSubmit = async () => {
     // Validation simple
-    if (!documentFormData.employe_id) {
+    if (!documentSelectedEmployee.id) {
       alert('Veuillez sélectionner votre nom');
       return;
     }
@@ -231,10 +446,15 @@ export default function DemandeRHForm() {
     setDocumentLoading(true);
 
     try {
+      const dataToSend = {
+        ...documentFormData,
+        employe_id: documentSelectedEmployee.id
+      };
+
       const response = await fetch(`${API_BASE_URL}/api/generer-attestation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(documentFormData)
+        body: JSON.stringify(dataToSend)
       });
 
       const result = await response.json();
@@ -248,6 +468,10 @@ export default function DemandeRHForm() {
             employe_id: '',
             type_document: 'attestation_travail'
           });
+          // Réinitialiser la recherche
+          setDocumentSearchTerm('');
+          setDocumentSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+          setDocumentFilteredEmployees([]);
         }, 4000);
       } else {
         alert(result.error || 'Erreur lors de la génération du document');
@@ -362,25 +586,21 @@ export default function DemandeRHForm() {
                 {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
               </div>
 
-              {/* Employé */}
+              {/* Employé - Recherche */}
               <div className="form-section">
-                <label className="form-label">
-                  <User className="form-label-icon" />
-                  Employé *
-                </label>
-                <select
-                  value={demandeFormData.employe_id}
-                  onChange={(e) => handleDemandeInputChange('employe_id', e.target.value)}
-                  className={`form-select ${errors.employe_id ? 'error' : ''}`}
-                >
-                  <option value="">Sélectionnez votre nom</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.nom} {emp.prenom} - {emp.poste}
-                    </option>
-                  ))}
-                </select>
-                {errors.employe_id && <div className="error-message"><AlertCircle size={16} /> {errors.employe_id}</div>}
+                <EmployeeSearchInput
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  filteredEmployees={filteredEmployees}
+                  showDropdown={showDropdown}
+                  setShowDropdown={setShowDropdown}
+                  selectedEmployee={selectedEmployee}
+                  setSelectedEmployee={setSelectedEmployee}
+                  errors={errors}
+                  fieldName="employe_id"
+                  placeholder="Rechercher votre nom..."
+                  onEmployeeSelect={handleEmployeeSelect}
+                />
               </div>
 
               {/* Motif */}
@@ -610,27 +830,24 @@ export default function DemandeRHForm() {
           <div className="demande-card">
             <div className="demande-header">
               <img src={logoo} alt="Logo" className="header-logo" />
-             
             </div>
 
             <div className="demande-body">
+              {/* Employé - Recherche */}
               <div className="form-section">
-                <label className="form-label">
-                  <User className="form-label-icon" />
-                  Employé *
-                </label>
-                <select
-                  value={documentFormData.employe_id}
-                  onChange={(e) => handleDocumentInputChange('employe_id', e.target.value)}
-                  className="form-select"
-                >
-                  <option value="">Sélectionnez votre nom</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.nom} {emp.prenom} - {emp.poste}
-                    </option>
-                  ))}
-                </select>
+                <EmployeeSearchInput
+                  searchTerm={documentSearchTerm}
+                  setSearchTerm={setDocumentSearchTerm}
+                  filteredEmployees={documentFilteredEmployees}
+                  showDropdown={documentShowDropdown}
+                  setShowDropdown={setDocumentShowDropdown}
+                  selectedEmployee={documentSelectedEmployee}
+                  setSelectedEmployee={setDocumentSelectedEmployee}
+                  errors={{}}
+                  fieldName="employe_id"
+                  placeholder="Rechercher votre nom..."
+                  onEmployeeSelect={handleDocumentEmployeeSelect}
+                />
               </div>
 
               <div className="form-section">
@@ -645,9 +862,7 @@ export default function DemandeRHForm() {
                 >
                   <option value="attestation_travail">Attestation de Travail</option>
                   <option value="attestation_salaire">Attestation de Salaire</option>
-                 
                 </select>
-               
               </div>
 
               <div className="info-box">
@@ -661,7 +876,6 @@ export default function DemandeRHForm() {
                     personnelles et envoyé directement par e-mail au responsable RH.
                     Vous pourrez le récupérer auprès de son bureau dans un délai de 24 heures.
                   </p>
-                               
                 </div>
               </div>
 
