@@ -272,21 +272,24 @@ export default function DemandeRHForm() {
       if (demandeFormData.date_depart && demandeFormData.date_retour) {
         const dateDepart = new Date(demandeFormData.date_depart);
         const dateRetour = new Date(demandeFormData.date_retour);
-        if (dateRetour < dateDepart) {
-          newErrors.date_retour = 'La date de retour doit être après la date de départ';
+        const isDemiJournee = demandeFormData.type_demande === 'conges' && demandeFormData.type_conge === 'demi_journee';
+        if (isDemiJournee) {
+          // Demi-journée: même date autorisée car l'employé revient le même jour
+          if (dateRetour < dateDepart) {
+            newErrors.date_retour = 'La date de retour ne peut pas être avant la date de départ';
+          }
+        } else {
+          // Congé normal ou mission: la date de retour est le 1er jour de reprise,
+          // elle doit donc être strictement après la date de départ
+          if (dateRetour <= dateDepart) {
+            newErrors.date_retour = 'La date de retour est le 1er jour de reprise du travail — elle doit être après la date de départ';
+          }
         }
       }
     }
 
     if (demandeFormData.type_demande === 'conges' && !demandeFormData.type_conge) {
       newErrors.type_conge = 'Veuillez sélectionner un type de congé';
-    }
-
-    // Si "Autre" est choisi, le champ texte est obligatoire
-    if (demandeFormData.type_demande === 'conges' && demandeFormData.type_conge === 'autre') {
-      if (!demandeFormData.type_conge_autre || !demandeFormData.type_conge_autre.trim()) {
-        newErrors.type_conge_autre = 'Veuillez préciser le type de congé';
-      }
     }
 
     if (demandeFormData.type_demande === 'autorisation') {
@@ -328,6 +331,8 @@ export default function DemandeRHForm() {
 
     try {
       // Préparer les données pour l'envoi
+      // "demi_journee" est une valeur UI uniquement — on reconvertit pour le backend
+      const isDemiJournee = demandeFormData.type_conge === 'demi_journee';
       const dataToSend = {
         ...demandeFormData,
         employe_id: selectedEmployee.id,
@@ -336,12 +341,10 @@ export default function DemandeRHForm() {
         heure_depart: demandeFormData.heure_depart || null,
         heure_retour: demandeFormData.heure_retour || null,
         frais_deplacement: demandeFormData.frais_deplacement ? parseFloat(demandeFormData.frais_deplacement) : null,
-        type_conge: demandeFormData.type_conge || null,
-        type_conge_autre:
-          demandeFormData.type_conge === 'autre' && demandeFormData.type_conge_autre
-            ? demandeFormData.type_conge_autre.trim()
-            : null,
-        demi_journee: demandeFormData.demi_journee || false
+        // Le backend attend 'annuel' ou 'sans_solde' — jamais 'demi_journee'
+        type_conge: isDemiJournee ? 'annuel' : (demandeFormData.type_conge || null),
+        type_conge_autre: null,
+        demi_journee: isDemiJournee ? true : (demandeFormData.demi_journee || false)
       };
 
       const response = await fetch(`${API_BASE_URL}/api/demandes`, {
@@ -652,79 +655,56 @@ export default function DemandeRHForm() {
               </div>
 
               {demandeFormData.type_demande === 'conges' && (
-                <>
-                  <div className="form-checkbox-group">
-                    <label className="checkbox-label">
+                <div className="form-section">
+                  <label className="form-label">
+                    Type de congé *
+                  </label>
+                  <div className="radio-group">
+                    <label className="radio-label">
                       <input
-                        type="checkbox"
-                        checked={demandeFormData.demi_journee}
-                        onChange={(e) => handleDemandeInputChange('demi_journee', e.target.checked)}
-                        className="checkbox-input"
+                        type="radio"
+                        name="type_conge"
+                        value="annuel"
+                        checked={demandeFormData.type_conge === 'annuel'}
+                        onChange={(e) => {
+                          handleDemandeInputChange('type_conge', e.target.value);
+                          handleDemandeInputChange('demi_journee', false);
+                        }}
+                        className="radio-input"
+                      />
+                      Congé annuel
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="type_conge"
+                        value="sans_solde"
+                        checked={demandeFormData.type_conge === 'sans_solde'}
+                        onChange={(e) => {
+                          handleDemandeInputChange('type_conge', e.target.value);
+                          handleDemandeInputChange('demi_journee', false);
+                        }}
+                        className="radio-input"
+                      />
+                      Congé sans solde
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="type_conge"
+                        value="demi_journee"
+                        checked={demandeFormData.type_conge === 'demi_journee'}
+                        onChange={(e) => {
+                          handleDemandeInputChange('type_conge', e.target.value);
+                          handleDemandeInputChange('demi_journee', true);
+                        }}
+                        className="radio-input"
                       />
                       Demi-journée
                     </label>
                   </div>
-
-                  <div className="form-section">
-                    <label className="form-label">
-                      Type de congé *
-                    </label>
-                    <div className="radio-group">
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          name="type_conge"
-                          value="annuel"
-                          checked={demandeFormData.type_conge === 'annuel'}
-                          onChange={(e) => handleDemandeInputChange('type_conge', e.target.value)}
-                          className="radio-input"
-                        />
-                        Congé annuel
-                      </label>
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          name="type_conge"
-                          value="sans_solde"
-                          checked={demandeFormData.type_conge === 'sans_solde'}
-                          onChange={(e) => handleDemandeInputChange('type_conge', e.target.value)}
-                          className="radio-input"
-                        />
-                        Congé sans solde
-                      </label>
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          name="type_conge"
-                          value="autre"
-                          checked={demandeFormData.type_conge === 'autre'}
-                          onChange={(e) => handleDemandeInputChange('type_conge', e.target.value)}
-                          className="radio-input"
-                        />
-                        Autre (à préciser)
-                      </label>
-                    </div>
-
-                    {demandeFormData.type_conge === 'autre' && (
-                      <div style={{ marginTop: '8px' }}>
-                        <input
-                          type="text"
-                          value={demandeFormData.type_conge_autre}
-                          onChange={(e) => handleDemandeInputChange('type_conge_autre', e.target.value)}
-                          placeholder="Précisez le type de congé"
-                          className={`form-input ${errors.type_conge_autre ? 'error' : ''}`}
-                        />
-                        {errors.type_conge_autre && (
-                          <div className="error-message">
-                            <AlertCircle size={16} /> {errors.type_conge_autre}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {errors.type_conge && <div className="error-message"><AlertCircle size={16} /> {errors.type_conge}</div>}
-                  </div>
-                </>
+                  {errors.type_conge && <div className="error-message"><AlertCircle size={16} /> {errors.type_conge}</div>}
+                </div>
               )}
 
               {demandeFormData.type_demande === 'autorisation' && (
