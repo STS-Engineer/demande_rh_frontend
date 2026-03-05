@@ -769,7 +769,8 @@ export default function DemandeRHForm() {
                     </div>
                   </div>
 
-                  <div className="form-section">
+                  {/* Frais de déplacement section - Hidden for missions as requested */}
+                  <div className="form-section" style={{ display: 'none' }}>
                     <label className="form-label">
                       Frais de déplacement (TND)
                     </label>
