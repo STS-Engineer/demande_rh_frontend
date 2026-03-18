@@ -300,6 +300,14 @@ export default function DemandeRHForm() {
       if (demandeFormData.heure_depart && demandeFormData.heure_retour) {
         if (demandeFormData.heure_retour <= demandeFormData.heure_depart) {
           newErrors.heure_retour = 'L\'heure d\'arrivée doit être après l\'heure de départ';
+        } else {
+          // Autorisation ne peut pas dépasser 4 heures
+          const [depH, depM] = demandeFormData.heure_depart.split(':').map(Number);
+          const [retH, retM] = demandeFormData.heure_retour.split(':').map(Number);
+          const durationMinutes = (retH * 60 + retM) - (depH * 60 + depM);
+          if (durationMinutes > 180) {
+            newErrors.heure_retour = 'Une autorisation ne peut pas dépasser 3 heures';
+          }
         }
       }
     }
