@@ -168,7 +168,8 @@ export default function DemandeRHForm() {
     demi_journee: false,
     type_conge: '',
     type_conge_autre: '',
-    frais_deplacement: ''
+    frais_deplacement: '',
+    nombre_jours: ''
   });
 
   // États pour la section documents
@@ -292,6 +293,14 @@ export default function DemandeRHForm() {
       newErrors.type_conge = 'Veuillez sélectionner un type de congé';
     }
 
+    if (demandeFormData.type_demande === 'conges') {
+      if (!demandeFormData.nombre_jours || demandeFormData.nombre_jours === '') {
+        newErrors.nombre_jours = 'Veuillez saisir le nombre de jours ouvrables';
+      } else if (parseInt(demandeFormData.nombre_jours) < 1) {
+        newErrors.nombre_jours = 'Le nombre de jours doit être au moins 1';
+      }
+    }
+
     if (demandeFormData.type_demande === 'autorisation') {
       if (!demandeFormData.heure_depart) newErrors.heure_depart = 'Veuillez saisir l\'heure de départ';
       if (!demandeFormData.heure_retour) newErrors.heure_retour = 'Veuillez saisir l\'heure d\'arrivée';
@@ -379,7 +388,8 @@ export default function DemandeRHForm() {
             demi_journee: false,
             type_conge: '',
             type_conge_autre: '',
-            frais_deplacement: ''
+            frais_deplacement: '',
+            nombre_jours: ''
           });
           // Réinitialiser la recherche
           setSearchTerm('');
@@ -424,7 +434,8 @@ export default function DemandeRHForm() {
       demi_journee: false,
       type_conge: '',
       type_conge_autre: '',
-      frais_deplacement: ''
+      frais_deplacement: '',
+      nombre_jours: ''
     }));
     setErrors(prev => ({
       ...prev,
@@ -712,6 +723,25 @@ export default function DemandeRHForm() {
                     </label>
                   </div>
                   {errors.type_conge && <div className="error-message"><AlertCircle size={16} /> {errors.type_conge}</div>}
+                </div>
+              )}
+
+              {demandeFormData.type_demande === 'conges' && (
+                <div className="form-section">
+                  <label className="form-label">
+                    <Calendar className="form-label-icon" />
+                    Nombre de jours ouvrables *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={demandeFormData.nombre_jours}
+                    onChange={(e) => handleDemandeInputChange('nombre_jours', e.target.value)}
+                    placeholder="Ex: 5"
+                    className={`form-input ${errors.nombre_jours ? 'error' : ''}`}
+                  />
+                  {errors.nombre_jours && <div className="error-message"><AlertCircle size={16} /> {errors.nombre_jours}</div>}
                 </div>
               )}
 
