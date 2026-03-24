@@ -266,24 +266,37 @@ export default function DemandeRHForm() {
     if (!demandeFormData.date_depart) newErrors.date_depart = 'Veuillez saisir la date de départ';
 
     // Validation conditionnelle selon le type de demande
+    // Validation conditionnelle selon le type de demande
     if (demandeFormData.type_demande === 'conges' || demandeFormData.type_demande === 'mission') {
-      if (!demandeFormData.date_retour) newErrors.date_retour = 'Veuillez saisir la date de retour';
-      
-      // Validation des dates
+      if (!demandeFormData.date_retour) {
+        newErrors.date_retour = 'Veuillez saisir la date de retour';
+      }
+    
       if (demandeFormData.date_depart && demandeFormData.date_retour) {
         const dateDepart = new Date(demandeFormData.date_depart);
         const dateRetour = new Date(demandeFormData.date_retour);
-        const isDemiJournee = demandeFormData.type_demande === 'conges' && demandeFormData.type_conge === 'demi_journee';
-        if (isDemiJournee) {
-          // Demi-journée: même date autorisée car l'employé revient le même jour
+    
+        // Cas mission : même jour autorisé
+        if (demandeFormData.type_demande === 'mission') {
           if (dateRetour < dateDepart) {
             newErrors.date_retour = 'La date de retour ne peut pas être avant la date de départ';
           }
-        } else {
-          // Congé normal ou mission: la date de retour est le 1er jour de reprise,
-          // elle doit donc être strictement après la date de départ
-          if (dateRetour <= dateDepart) {
-            newErrors.date_retour = 'La date de retour est le 1er jour de reprise du travail — elle doit être après la date de départ';
+        }
+    
+        // Cas congé
+        if (demandeFormData.type_demande === 'conges') {
+          const isDemiJournee = demandeFormData.type_conge === 'demi_journee';
+    
+          if (isDemiJournee) {
+            // Demi-journée : même date autorisée
+            if (dateRetour < dateDepart) {
+              newErrors.date_retour = 'La date de retour ne peut pas être avant la date de départ';
+            }
+          } else {
+            // Congé normal : retour = 1er jour de reprise, donc strictement après
+            if (dateRetour <= dateDepart) {
+              newErrors.date_retour = 'La date de retour est le 1er jour de reprise du travail — elle doit être après la date de départ';
+            }
           }
         }
       }
