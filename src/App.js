@@ -266,7 +266,6 @@ export default function DemandeRHForm() {
     if (!demandeFormData.date_depart) newErrors.date_depart = 'Veuillez saisir la date de départ';
 
     // Validation conditionnelle selon le type de demande
-    // Validation conditionnelle selon le type de demande
     if (demandeFormData.type_demande === 'conges' || demandeFormData.type_demande === 'mission') {
       if (!demandeFormData.date_retour) {
         newErrors.date_retour = 'Veuillez saisir la date de retour';
@@ -309,8 +308,9 @@ export default function DemandeRHForm() {
     if (demandeFormData.type_demande === 'conges') {
       if (!demandeFormData.nombre_jours || demandeFormData.nombre_jours === '') {
         newErrors.nombre_jours = 'Veuillez saisir le nombre de jours ouvrables';
-      } else if (parseInt(demandeFormData.nombre_jours) < 1) {
-        newErrors.nombre_jours = 'Le nombre de jours doit être au moins 1';
+      // ✅ FIX 3: use parseFloat and min 0.5 to allow demi-journée
+      } else if (parseFloat(demandeFormData.nombre_jours) < 0.5) {
+        newErrors.nombre_jours = 'Le nombre de jours doit être au moins 0.5';
       }
     }
 
@@ -701,6 +701,8 @@ export default function DemandeRHForm() {
                         onChange={(e) => {
                           handleDemandeInputChange('type_conge', e.target.value);
                           handleDemandeInputChange('demi_journee', false);
+                          // ✅ FIX 1: reset nombre_jours when switching away from demi_journee
+                          handleDemandeInputChange('nombre_jours', '');
                         }}
                         className="radio-input"
                       />
@@ -715,6 +717,8 @@ export default function DemandeRHForm() {
                         onChange={(e) => {
                           handleDemandeInputChange('type_conge', e.target.value);
                           handleDemandeInputChange('demi_journee', false);
+                          // ✅ FIX 1: reset nombre_jours when switching away from demi_journee
+                          handleDemandeInputChange('nombre_jours', '');
                         }}
                         className="radio-input"
                       />
@@ -729,6 +733,8 @@ export default function DemandeRHForm() {
                         onChange={(e) => {
                           handleDemandeInputChange('type_conge', e.target.value);
                           handleDemandeInputChange('demi_journee', true);
+                          // ✅ FIX 1: auto-set 0.5 when demi_journee is selected
+                          handleDemandeInputChange('nombre_jours', '0.5');
                         }}
                         className="radio-input"
                       />
@@ -745,13 +751,15 @@ export default function DemandeRHForm() {
                     <Calendar className="form-label-icon" />
                     Nombre de jours ouvrables *
                   </label>
+                  {/* ✅ FIX 2: dynamic min/step/disabled based on type_conge */}
                   <input
                     type="number"
-                    min="1"
-                    step="1"
+                    min={demandeFormData.type_conge === 'demi_journee' ? '0.5' : '1'}
+                    step={demandeFormData.type_conge === 'demi_journee' ? '0.5' : '1'}
                     value={demandeFormData.nombre_jours}
                     onChange={(e) => handleDemandeInputChange('nombre_jours', e.target.value)}
-                    placeholder="Ex: 5"
+                    placeholder={demandeFormData.type_conge === 'demi_journee' ? '0.5' : 'Ex: 5'}
+                    disabled={demandeFormData.type_conge === 'demi_journee'}
                     className={`form-input ${errors.nombre_jours ? 'error' : ''}`}
                   />
                   {errors.nombre_jours && <div className="error-message"><AlertCircle size={16} /> {errors.nombre_jours}</div>}
