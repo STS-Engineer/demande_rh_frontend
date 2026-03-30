@@ -10,6 +10,32 @@ import './DemandeRHForm.css';
 // URL de l'API - utilise la variable d'environnement en production, localhost en développement
 const API_BASE_URL = 'https://hr-back.azurewebsites.net';
 
+// ============================================
+// CHANGE 1: Added countWorkingDays helper function
+// ============================================
+const countWorkingDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return '';
+
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const [ey, em, ed] = endDate.split('-').map(Number);
+
+  const start = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+
+  if (end <= start) return '';
+
+  let count = 0;
+  const current = new Date(start);
+
+  while (current < end) {
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) count++;
+    current.setDate(current.getDate() + 1);
+  }
+
+  return count.toString();
+};
+
 // Composant réutilisable pour la recherche d'employés
 const EmployeeSearchInput = ({
   searchTerm,
@@ -308,7 +334,6 @@ export default function DemandeRHForm() {
     if (demandeFormData.type_demande === 'conges') {
       if (!demandeFormData.nombre_jours || demandeFormData.nombre_jours === '') {
         newErrors.nombre_jours = 'Veuillez saisir le nombre de jours ouvrables';
-      // ✅ FIX 3: use parseFloat and min 0.5 to allow demi-journée
       } else if (parseFloat(demandeFormData.nombre_jours) < 0.5) {
         newErrors.nombre_jours = 'Le nombre de jours doit être au moins 0.5';
       }
@@ -420,12 +445,24 @@ export default function DemandeRHForm() {
     }
   };
 
+  // ============================================
+  // CHANGE 2: Updated handleDemandeInputChange to auto-calculate nombre_jours
+  // ============================================
   const handleDemandeInputChange = (field, value) => {
-    setDemandeFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
+    setDemandeFormData(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // Auto-calculate nombre_jours when dates change for annuel/sans_solde
+      if (
+        (field === 'date_depart' || field === 'date_retour') &&
+        (updated.type_conge === 'annuel' || updated.type_conge === 'sans_solde')
+      ) {
+        updated.nombre_jours = countWorkingDays(updated.date_depart, updated.date_retour);
+      }
+
+      return updated;
+    });
+
     // Effacer l'erreur du champ quand l'utilisateur commence à taper
     if (errors[field]) {
       setErrors(prev => ({
@@ -692,6 +729,7 @@ export default function DemandeRHForm() {
                     Type de congé *
                   </label>
                   <div className="radio-group">
+                    {/* CHANGE 3: Updated annuel radio onChange to recalculate working days */}
                     <label className="radio-label">
                       <input
                         type="radio"
@@ -701,13 +739,15 @@ export default function DemandeRHForm() {
                         onChange={(e) => {
                           handleDemandeInputChange('type_conge', e.target.value);
                           handleDemandeInputChange('demi_journee', false);
-                          // ✅ FIX 1: reset nombre_jours when switching away from demi_journee
-                          handleDemandeInputChange('nombre_jours', '');
+                          handleDemandeInputChange('nombre_jours',
+                            countWorkingDays(demandeFormData.date_depart, demandeFormData.date_retour)
+                          );
                         }}
                         className="radio-input"
                       />
                       Congé annuel
                     </label>
+                    {/* CHANGE 3: Updated sans_solde radio onChange to recalculate working days */}
                     <label className="radio-label">
                       <input
                         type="radio"
@@ -717,8 +757,9 @@ export default function DemandeRHForm() {
                         onChange={(e) => {
                           handleDemandeInputChange('type_conge', e.target.value);
                           handleDemandeInputChange('demi_journee', false);
-                          // ✅ FIX 1: reset nombre_jours when switching away from demi_journee
-                          handleDemandeInputChange('nombre_jours', '');
+                          handleDemandeInputChange('nombre_jours',
+                            countWorkingDays(demandeFormData.date_depart, demandeFormData.date_retour)
+                          );
                         }}
                         className="radio-input"
                       />
@@ -751,7 +792,7 @@ export default function DemandeRHForm() {
                     <Calendar className="form-label-icon" />
                     Nombre de jours ouvrables *
                   </label>
-                  {/* ✅ FIX 2: dynamic min/step/disabled based on type_conge */}
+                  {/* Auto-calculated from dates, but still editable for public holidays */}
                   <input
                     type="number"
                     min={demandeFormData.type_conge === 'demi_journee' ? '0.5' : '1'}
