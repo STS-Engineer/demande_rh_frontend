@@ -3,7 +3,8 @@ import logo from './logo_sts.png';
 import logoo from './logo_sts2.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
-  AlertCircle, FileCheck, Briefcase, File, Search, PenLine
+  AlertCircle, FileCheck, Briefcase, File, Search, PenLine,
+  TrendingUp, DollarSign
 } from 'lucide-react';
 import './DemandeRHForm.css';
 
@@ -59,7 +60,7 @@ const EmployeeSearchInput = ({
     });
     setSearchTerm(`${employee.nom} ${employee.prenom} - ${employee.poste}`);
     setShowDropdown(false);
-    
+
     if (onEmployeeSelect) {
       onEmployeeSelect(employee.id);
     }
@@ -68,7 +69,7 @@ const EmployeeSearchInput = ({
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     // Si l'utilisateur efface le champ, réinitialiser la sélection
     if (value.trim() === '') {
       setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
@@ -76,7 +77,7 @@ const EmployeeSearchInput = ({
         onEmployeeSelect('');
       }
     }
-    
+
     if (value.trim() === '') {
       setShowDropdown(false);
     } else {
@@ -120,7 +121,7 @@ const EmployeeSearchInput = ({
             <AlertCircle size={16} /> {errors[fieldName]}
           </div>
         )}
-        
+
         {showDropdown && filteredEmployees.length > 0 && (
           <div className="employee-dropdown">
             {filteredEmployees.map(emp => (
@@ -139,7 +140,7 @@ const EmployeeSearchInput = ({
             ))}
           </div>
         )}
-        
+
         {showDropdown && filteredEmployees.length === 0 && searchTerm.trim() !== '' && (
           <div className="employee-dropdown">
             <div className="dropdown-item no-results">
@@ -154,12 +155,12 @@ const EmployeeSearchInput = ({
 };
 
 export default function DemandeRHForm() {
-  const [activeSection, setActiveSection] = useState('demandes'); // 'demandes', 'documents' ou 'remarques'
+  const [activeSection, setActiveSection] = useState('demandes'); // 'demandes' ou 'documents'
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   // États pour la recherche d'employés (section demandes)
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -204,23 +205,23 @@ export default function DemandeRHForm() {
     type_document: 'attestation_travail'
   });
 
-  // États pour la section remarques
-  const [remarqueFormData, setRemarqueFormData] = useState({
-    employe_id: '',
-    sujet: '',
-    message: ''
-  });
-  const [remarqueSearchTerm, setRemarqueSearchTerm] = useState('');
-  const [remarqueFilteredEmployees, setRemarqueFilteredEmployees] = useState([]);
-  const [remarqueShowDropdown, setRemarqueShowDropdown] = useState(false);
-  const [remarqueSelectedEmployee, setRemarqueSelectedEmployee] = useState({
-    id: '',
-    name: '',
-    nom: '',
-    prenom: ''
-  });
-  const [remarqueLoading, setRemarqueLoading] = useState(false);
-  const [remarqueSubmitted, setRemarqueSubmitted] = useState(false);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Etats pour la demande d'avance sur salaire
   const [avanceFormData, setAvanceFormData] = useState({
@@ -228,6 +229,18 @@ export default function DemandeRHForm() {
     mode_remboursement: '',
     signature_demandeur: '',
     acceptation_responsabilite: false
+  });
+
+  // ============================================
+  // NEW: États pour la demande de révision sur salaire
+  // ============================================
+  const [revisionFormData, setRevisionFormData] = useState({
+    salaire_actuel: '',
+    salaire_souhaite: '',
+    justification: '',
+    date_souhaitee: '',
+    documents_justificatifs: '',
+    acceptation_confirmation: false
   });
 
   const [documentLoading, setDocumentLoading] = useState(false);
@@ -258,7 +271,7 @@ export default function DemandeRHForm() {
         const fullName = `${emp.nom} ${emp.prenom}`.toLowerCase();
         const fullNameWithPoste = `${emp.nom} ${emp.prenom} - ${emp.poste}`.toLowerCase();
         const search = searchTerm.toLowerCase();
-        
+
         return fullName.includes(search) || 
                fullNameWithPoste.includes(search) ||
                emp.nom.toLowerCase().includes(search) || 
@@ -278,7 +291,7 @@ export default function DemandeRHForm() {
         const fullName = `${emp.nom} ${emp.prenom}`.toLowerCase();
         const fullNameWithPoste = `${emp.nom} ${emp.prenom} - ${emp.poste}`.toLowerCase();
         const search = documentSearchTerm.toLowerCase();
-        
+
         return fullName.includes(search) || 
                fullNameWithPoste.includes(search) ||
                emp.nom.toLowerCase().includes(search) || 
@@ -289,25 +302,25 @@ export default function DemandeRHForm() {
     }
   }, [documentSearchTerm, employees]);
 
-  // Filtrage des employés pour la section remarques
-  useEffect(() => {
-    if (remarqueSearchTerm.trim() === '') {
-      setRemarqueFilteredEmployees([]);
-    } else {
-      const filtered = employees.filter(emp => {
-        const fullName = `${emp.nom} ${emp.prenom}`.toLowerCase();
-        const fullNameWithPoste = `${emp.nom} ${emp.prenom} - ${emp.poste}`.toLowerCase();
-        const search = remarqueSearchTerm.toLowerCase();
 
-        return fullName.includes(search) || 
-               fullNameWithPoste.includes(search) ||
-               emp.nom.toLowerCase().includes(search) || 
-               emp.prenom.toLowerCase().includes(search) ||
-               emp.poste.toLowerCase().includes(search);
-      });
-      setRemarqueFilteredEmployees(filtered);
-    }
-  }, [remarqueSearchTerm, employees]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ============================================
   // FONCTIONS POUR LA SECTION DEMANDES
@@ -318,7 +331,7 @@ export default function DemandeRHForm() {
       ...prev,
       employe_id: employeeId
     }));
-    
+
     // Effacer l'erreur du champ employé si elle existe
     if (errors.employe_id) {
       setErrors(prev => ({
@@ -342,22 +355,22 @@ export default function DemandeRHForm() {
       if (!demandeFormData.date_retour) {
         newErrors.date_retour = 'Veuillez saisir la date de retour';
       }
-    
+
       if (demandeFormData.date_depart && demandeFormData.date_retour) {
         const dateDepart = new Date(demandeFormData.date_depart);
         const dateRetour = new Date(demandeFormData.date_retour);
-    
+
         // Cas mission : même jour autorisé
         if (demandeFormData.type_demande === 'mission') {
           if (dateRetour < dateDepart) {
             newErrors.date_retour = 'La date de retour ne peut pas être avant la date de départ';
           }
         }
-    
+
         // Cas congé
         if (demandeFormData.type_demande === 'conges') {
           const isDemiJournee = demandeFormData.type_conge === 'demi_journee';
-    
+
           if (isDemiJournee) {
             // Demi-journée : même date autorisée
             if (dateRetour < dateDepart) {
@@ -388,7 +401,7 @@ export default function DemandeRHForm() {
     if (demandeFormData.type_demande === 'autorisation') {
       if (!demandeFormData.heure_depart) newErrors.heure_depart = 'Veuillez saisir l\'heure de départ';
       if (!demandeFormData.heure_retour) newErrors.heure_retour = 'Veuillez saisir l\'heure d\'arrivée';
-      
+
       // Validation des heures
       if (demandeFormData.heure_depart && demandeFormData.heure_retour) {
         if (demandeFormData.heure_retour <= demandeFormData.heure_depart) {
@@ -414,7 +427,112 @@ export default function DemandeRHForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ============================================
+  // NEW: Validation pour révision sur salaire
+  // ============================================
+  const validateRevisionForm = () => {
+    const newErrors = {};
+
+    if (!selectedEmployee.id) newErrors.employe_id = 'Veuillez sélectionner un employé';
+    if (!demandeFormData.titre.trim()) newErrors.titre = 'Veuillez saisir le titre/motif de la demande';
+    if (!revisionFormData.salaire_actuel) {
+      newErrors.salaire_actuel = 'Veuillez indiquer votre salaire actuel';
+    } else if (parseFloat(revisionFormData.salaire_actuel) <= 0) {
+      newErrors.salaire_actuel = 'Le salaire doit être supérieur à 0';
+    }
+    if (!revisionFormData.salaire_souhaite) {
+      newErrors.salaire_souhaite = 'Veuillez indiquer le salaire souhaité';
+    } else if (parseFloat(revisionFormData.salaire_souhaite) <= parseFloat(revisionFormData.salaire_actuel)) {
+      newErrors.salaire_souhaite = 'Le salaire souhaité doit être supérieur au salaire actuel';
+    }
+    if (!revisionFormData.justification.trim()) {
+      newErrors.justification = 'Veuillez fournir une justification détaillée';
+    }
+    if (!revisionFormData.date_souhaitee) {
+      newErrors.date_souhaitee = 'Veuillez indiquer la date souhaitée pour la révision';
+    }
+    if (!revisionFormData.acceptation_confirmation) {
+      newErrors.acceptation_confirmation = 'Veuillez confirmer votre demande';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ============================================
+  // NEW: Submit pour révision sur salaire
+  // ============================================
+  const handleRevisionSubmit = async () => {
+    if (!validateRevisionForm()) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/demandes-revision-salaire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employe_id: selectedEmployee.id,
+          titre_motif: demandeFormData.titre,
+          salaire_actuel: parseFloat(revisionFormData.salaire_actuel),
+          salaire_souhaite: parseFloat(revisionFormData.salaire_souhaite),
+          justification: revisionFormData.justification,
+          date_souhaitee: revisionFormData.date_souhaitee,
+          documents_justificatifs: revisionFormData.documents_justificatifs || null,
+          date_demande: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          setDemandeFormData({
+            employe_id: '',
+            type_demande: '',
+            titre: '',
+            date_depart: '',
+            date_retour: '',
+            heure_depart: '',
+            heure_retour: '',
+            demi_journee: false,
+            type_conge: '',
+            type_conge_autre: '',
+            frais_deplacement: '',
+            nombre_jours: ''
+          });
+          setRevisionFormData({
+            salaire_actuel: '',
+            salaire_souhaite: '',
+            justification: '',
+            date_souhaitee: '',
+            documents_justificatifs: '',
+            acceptation_confirmation: false
+          });
+          setSearchTerm('');
+          setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+          setFilteredEmployees([]);
+        }, 4000);
+      } else {
+        alert(result.error || 'Erreur lors de la soumission de la demande de révision');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDemandeSubmit = async () => {
+    // NEW: Check if it's revision request
+    if (demandeFormData.type_demande === 'revision_salaire') {
+      await handleRevisionSubmit();
+      return;
+    }
+
     if (demandeFormData.type_demande === 'avance_salaire') {
       await handleAvanceSubmit();
       return;
@@ -652,6 +770,23 @@ export default function DemandeRHForm() {
   };
 
   // ============================================
+  // NEW: Handler for revision form inputs
+  // ============================================
+  const handleRevisionInputChange = (field, value) => {
+    setRevisionFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  // ============================================
   // FONCTIONS POUR LA SECTION DOCUMENTS
   // ============================================
 
@@ -717,91 +852,91 @@ export default function DemandeRHForm() {
     }));
   };
 
-  // ============================================
-  // FONCTIONS POUR LA SECTION REMARQUES
-  // ============================================
 
-  const handleRemarqueEmployeeSelect = (employeeId) => {
-    setRemarqueFormData(prev => ({
-      ...prev,
-      employe_id: employeeId
-    }));
 
-    if (errors.remarque_employe_id) {
-      setErrors(prev => ({
-        ...prev,
-        remarque_employe_id: ''
-      }));
-    }
-  };
 
-  const handleRemarqueInputChange = (field, value) => {
-    setRemarqueFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
 
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
-  };
 
-  const validateRemarqueForm = () => {
-    const newErrors = {};
 
-    if (!remarqueSelectedEmployee.id) newErrors.remarque_employe_id = 'Veuillez sélectionner un employé';
-    if (!remarqueFormData.sujet.trim()) newErrors.sujet = 'Veuillez saisir le sujet';
-    if (!remarqueFormData.message.trim()) newErrors.message = 'Veuillez saisir votre remarque';
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
-  const handleRemarqueSubmit = async () => {
-    if (!validateRemarqueForm()) return;
 
-    setRemarqueLoading(true);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/remarques`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employe_id: remarqueSelectedEmployee.id,
-          sujet: remarqueFormData.sujet,
-          message: remarqueFormData.message,
-          date_remarque: new Date().toISOString().split('T')[0]
-        })
-      });
 
-      const result = await response.json();
 
-      if (response.ok) {
-        setRemarqueSubmitted(true);
-        setTimeout(() => {
-          setRemarqueSubmitted(false);
-          setRemarqueFormData({
-            employe_id: '',
-            sujet: '',
-            message: ''
-          });
-          setRemarqueSearchTerm('');
-          setRemarqueSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
-          setRemarqueFilteredEmployees([]);
-        }, 4000);
-      } else {
-        alert(result.error || 'Erreur lors de l\'envoi de la remarque');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur de connexion au serveur');
-    } finally {
-      setRemarqueLoading(false);
-    }
-  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ============================================
   // RENDU CONDITIONNEL
@@ -851,26 +986,26 @@ export default function DemandeRHForm() {
     );
   }
 
-  if (activeSection === 'remarques' && remarqueSubmitted) {
-    return (
-      <div className="success-container">
-        <div className="success-card">
-          <CheckCircle className="success-icon" />
-          <h2 className="success-title">Remarque envoyée !</h2>
-          <p className="success-message">
-            Votre remarque a été transmise au service RH.
-          </p>
-          <button 
-            onClick={() => setActiveSection('demandes')}
-            className="section-switch-button"
-          >
-            <Briefcase size={18} />
-            Faire une demande RH
-          </button>
-        </div>
-      </div>
-    );
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <div className="demande-container">
@@ -891,13 +1026,13 @@ export default function DemandeRHForm() {
             <File size={20} />
             Documents
           </button>
-          <button 
-            className={`nav-button ${activeSection === 'remarques' ? 'active' : ''}`}
-            onClick={() => setActiveSection('remarques')}
-          >
-            <FileText size={20} />
-            Remarques
-          </button>
+
+
+
+
+
+
+
         </div>
 
         {activeSection === 'demandes' ? (
@@ -923,6 +1058,7 @@ export default function DemandeRHForm() {
                   <option value="conges">Congés</option>
                   <option value="mission">Mission</option>
                   <option value="avance_salaire">Avance sur salaire</option>
+                  <option value="revision_salaire">Révision sur salaire</option> {/* NEW OPTION */}
                 </select>
                 {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
               </div>
@@ -959,8 +1095,8 @@ export default function DemandeRHForm() {
                 {errors.titre && <div className="error-message"><AlertCircle size={16} /> {errors.titre}</div>}
               </div>
 
-              {/* Dates - Hidden for avance_salaire */}
-              {demandeFormData.type_demande !== 'avance_salaire' && (
+              {/* Dates - Hidden for avance_salaire and revision_salaire */}
+              {demandeFormData.type_demande !== 'avance_salaire' && demandeFormData.type_demande !== 'revision_salaire' && (
               <>
               {/* Dates */}
               <div className="form-grid">
@@ -1056,6 +1192,120 @@ export default function DemandeRHForm() {
                       J'accepte la prise de responsabilité et les modalités de remboursement indiquées.
                     </label>
                     {errors.acceptation_responsabilite && <div className="error-message"><AlertCircle size={16} /> {errors.acceptation_responsabilite}</div>}
+                  </div>
+                </>
+              )}
+
+              {/* ============================================ */}
+              {/* NEW: RÉVISION SUR SALAIRE SECTION */}
+              {/* ============================================ */}
+              {demandeFormData.type_demande === 'revision_salaire' && (
+                <>
+                  <div className="info-box revision-info">
+                    <div className="info-icon"><TrendingUp size={24} /></div>
+                    <div className="info-content">
+                      <h4>Demande de révision salariale</h4>
+                      <p>Veuillez remplir tous les champs ci-dessous pour soumettre votre demande de révision de salaire. Cette demande sera étudiée par votre responsable hiérarchique et les RH.</p>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <DollarSign className="form-label-icon" />
+                      Salaire actuel (TND) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={revisionFormData.salaire_actuel}
+                      onChange={(e) => handleRevisionInputChange('salaire_actuel', e.target.value)}
+                      placeholder="Ex: 1500.000"
+                      className={`form-input ${errors.salaire_actuel ? 'error' : ''}`}
+                    />
+                    {errors.salaire_actuel && <div className="error-message"><AlertCircle size={16} /> {errors.salaire_actuel}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <TrendingUp className="form-label-icon" />
+                      Salaire souhaité (TND) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={revisionFormData.salaire_souhaite}
+                      onChange={(e) => handleRevisionInputChange('salaire_souhaite', e.target.value)}
+                      placeholder="Ex: 1800.000"
+                      className={`form-input ${errors.salaire_souhaite ? 'error' : ''}`}
+                    />
+                    {errors.salaire_souhaite && <div className="error-message"><AlertCircle size={16} /> {errors.salaire_souhaite}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <FileText className="form-label-icon" />
+                      Justification détaillée *
+                    </label>
+                    <textarea
+                      value={revisionFormData.justification}
+                      onChange={(e) => handleRevisionInputChange('justification', e.target.value)}
+                      rows="4"
+                      placeholder="Décrivez en détail les raisons de votre demande (ancienneté, performances, responsabilités additionnelles, formation, etc.)"
+                      className={`form-textarea ${errors.justification ? 'error' : ''}`}
+                    />
+                    {errors.justification && <div className="error-message"><AlertCircle size={16} /> {errors.justification}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <Calendar className="form-label-icon" />
+                      Date souhaitée pour la révision *
+                    </label>
+                    <input
+                      type="date"
+                      value={revisionFormData.date_souhaitee}
+                      onChange={(e) => handleRevisionInputChange('date_souhaitee', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className={`form-input ${errors.date_souhaitee ? 'error' : ''}`}
+                    />
+                    {errors.date_souhaitee && <div className="error-message"><AlertCircle size={16} /> {errors.date_souhaitee}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <File className="form-label-icon" />
+                      Documents justificatifs (optionnel)
+                    </label>
+                    <textarea
+                      value={revisionFormData.documents_justificatifs}
+                      onChange={(e) => handleRevisionInputChange('documents_justificatifs', e.target.value)}
+                      rows="2"
+                      placeholder="Listez les documents que vous allez fournir (ex: certificats de formation, évaluations de performances, etc.)"
+                      className="form-textarea"
+                    />
+                    <small className="form-help">Vous pourrez joindre ces documents par email après soumission de la demande.</small>
+                  </div>
+
+                  <div className="info-box revision-highlight">
+                    <div className="info-icon"><CheckCircle size={24} /></div>
+                    <div className="info-content">
+                      <h4>Engagement du demandeur</h4>
+                      <p>En confirmant cette demande, je certifie que les informations fournies sont exactes et que ma demande de révision salariale est basée sur des éléments objectifs. Je comprends que cette demande sera étudiée dans le respect des procédures internes.</p>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={revisionFormData.acceptation_confirmation}
+                        onChange={(e) => handleRevisionInputChange('acceptation_confirmation', e.target.checked)}
+                      />
+                      Je confirme ma demande de révision sur salaire et j'accepte le traitement de ma demande selon la politique RH de l'entreprise.
+                    </label>
+                    {errors.acceptation_confirmation && <div className="error-message"><AlertCircle size={16} /> {errors.acceptation_confirmation}</div>}
                   </div>
                 </>
               )}
@@ -1241,6 +1491,8 @@ export default function DemandeRHForm() {
                     <span>
                       {demandeFormData.type_demande === 'avance_salaire' 
                         ? 'Soumettre la demande d\'avance' 
+                        : demandeFormData.type_demande === 'revision_salaire'
+                        ? 'Soumettre la demande de révision'
                         : 'Soumettre la demande'}
                     </span>
                   </>
@@ -1248,7 +1500,7 @@ export default function DemandeRHForm() {
               </button>
             </div>
           </div>
-        ) : activeSection === 'documents' ? (
+        ) : (
           <div className="demande-card">
             <div className="demande-header">
               <img src={logoo} alt="Logo" className="header-logo" />
@@ -1321,90 +1573,90 @@ export default function DemandeRHForm() {
               </button>
             </div>
           </div>
-        ) : (
-          <div className="demande-card">
-            <div className="demande-header">
-              <img src={logoo} alt="Logo" className="header-logo" />
-            </div>
 
-            <div className="demande-body">
-              <div className="form-section">
-                <EmployeeSearchInput
-                  searchTerm={remarqueSearchTerm}
-                  setSearchTerm={setRemarqueSearchTerm}
-                  filteredEmployees={remarqueFilteredEmployees}
-                  showDropdown={remarqueShowDropdown}
-                  setShowDropdown={setRemarqueShowDropdown}
-                  selectedEmployee={remarqueSelectedEmployee}
-                  setSelectedEmployee={setRemarqueSelectedEmployee}
-                  errors={errors}
-                  fieldName="remarque_employe_id"
-                  placeholder="Rechercher votre nom..."
-                  onEmployeeSelect={handleRemarqueEmployeeSelect}
-                />
-              </div>
 
-              <div className="form-section">
-                <label className="form-label">
-                  <FileText className="form-label-icon" />
-                  Sujet *
-                </label>
-                <input
-                  type="text"
-                  value={remarqueFormData.sujet}
-                  onChange={(e) => handleRemarqueInputChange('sujet', e.target.value)}
-                  placeholder="Ex: remarque, suggestion, problème..."
-                  className={`form-input ${errors.sujet ? 'error' : ''}`}
-                />
-                {errors.sujet && <div className="error-message"><AlertCircle size={16} /> {errors.sujet}</div>}
-              </div>
 
-              <div className="form-section">
-                <label className="form-label">
-                  Remarque *
-                </label>
-                <textarea
-                  value={remarqueFormData.message}
-                  onChange={(e) => handleRemarqueInputChange('message', e.target.value)}
-                  rows="6"
-                  placeholder="Saisissez votre remarque..."
-                  className={`form-textarea ${errors.message ? 'error' : ''}`}
-                />
-                {errors.message && <div className="error-message"><AlertCircle size={16} /> {errors.message}</div>}
-              </div>
 
-              <div className="info-box">
-                <div className="info-icon">
-                  <FileText size={24} />
-                </div>
-                <div className="info-content">
-                  <h4>Information importante</h4>
-                  <p>
-                    Votre remarque sera transmise au service RH pour traitement.
-                  </p>
-                </div>
-              </div>
 
-              <button
-                onClick={handleRemarqueSubmit}
-                disabled={remarqueLoading}
-                className="submit-button"
-              >
-                {remarqueLoading ? (
-                  <div className="loading-spinner">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    <span>Envoyer la remarque</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         )}
       </div>
     </div>
