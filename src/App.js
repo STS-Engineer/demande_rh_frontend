@@ -1085,7 +1085,7 @@ export default function DemandeRHForm() {
                 ) : (
                   <>
                     <Send size={20} />
-                    <span>{demandeFormData.type_demande === 'avance_salaire' ? 'Soumettre la demande d'avance' : 'Soumettre la demande'}</span>
+                    <span>{demandeFormData.type_demande === 'avance_salaire' ? 'Soumettre la demande d\'avance' : 'Soumettre la demande'}</span>
                   </>
                 )}
               </button>
