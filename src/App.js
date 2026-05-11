@@ -3,7 +3,7 @@ import logo from './logo_sts.png';
 import logoo from './logo_sts2.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
-  AlertCircle, FileCheck, Briefcase, File, Search
+  AlertCircle, FileCheck, Briefcase, File, Search, PenLine
 } from 'lucide-react';
 import './DemandeRHForm.css';
 
@@ -204,6 +204,14 @@ export default function DemandeRHForm() {
     type_document: 'attestation_travail'
   });
 
+  // Etats pour la demande d'avance sur salaire
+  const [avanceFormData, setAvanceFormData] = useState({
+    montant_demande: '',
+    mode_remboursement: '',
+    signature_demandeur: '',
+    acceptation_responsabilite: false
+  });
+
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentSubmitted, setDocumentSubmitted] = useState(false);
 
@@ -369,6 +377,11 @@ export default function DemandeRHForm() {
   };
 
   const handleDemandeSubmit = async () => {
+    if (demandeFormData.type_demande === 'avance_salaire') {
+      await handleAvanceSubmit();
+      return;
+    }
+
     // Validation de l'employé sélectionné
     if (!selectedEmployee.id) {
       setErrors(prev => ({
@@ -495,6 +508,109 @@ export default function DemandeRHForm() {
       type_conge: '',
       type_conge_autre: ''
     }));
+  };
+
+
+  // ============================================
+  // FONCTIONS POUR LA DEMANDE D'AVANCE SUR SALAIRE
+  // ============================================
+
+  const handleAvanceInputChange = (field, value) => {
+    setAvanceFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const validateAvanceForm = () => {
+    const newErrors = {};
+
+    if (!selectedEmployee.id) newErrors.employe_id = 'Veuillez sélectionner un employé';
+    if (!demandeFormData.titre.trim()) newErrors.titre = 'Veuillez saisir le titre / motif de l\'avance';
+    if (!avanceFormData.montant_demande) {
+      newErrors.montant_demande = 'Veuillez saisir le montant demandé';
+    } else if (parseFloat(avanceFormData.montant_demande) <= 0) {
+      newErrors.montant_demande = 'Le montant doit être supérieur à 0';
+    }
+    if (!avanceFormData.mode_remboursement.trim()) {
+      newErrors.mode_remboursement = 'Veuillez saisir le mode de remboursement souhaité';
+    }
+    if (!avanceFormData.signature_demandeur.trim()) {
+      newErrors.signature_demandeur = 'Veuillez signer la demande avec votre nom complet';
+    }
+    if (!avanceFormData.acceptation_responsabilite) {
+      newErrors.acceptation_responsabilite = 'Veuillez accepter la prise de responsabilité';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAvanceSubmit = async () => {
+    if (!validateAvanceForm()) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/demandes-avance-salaire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employe_id: selectedEmployee.id,
+          titre_motif: demandeFormData.titre,
+          montant_demande: parseFloat(avanceFormData.montant_demande),
+          mode_remboursement_souhaite: avanceFormData.mode_remboursement,
+          signature_demandeur: avanceFormData.signature_demandeur,
+          acceptation_responsabilite: avanceFormData.acceptation_responsabilite
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          setDemandeFormData({
+            employe_id: '',
+            type_demande: '',
+            titre: '',
+            date_depart: '',
+            date_retour: '',
+            heure_depart: '',
+            heure_retour: '',
+            demi_journee: false,
+            type_conge: '',
+            type_conge_autre: '',
+            frais_deplacement: '',
+            nombre_jours: ''
+          });
+          setAvanceFormData({
+            montant_demande: '',
+            mode_remboursement: '',
+            signature_demandeur: '',
+            acceptation_responsabilite: false
+          });
+          setSearchTerm('');
+          setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+          setFilteredEmployees([]);
+        }, 4000);
+      } else {
+        alert(result.error || 'Erreur lors de la soumission de la demande d\'avance');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ============================================
@@ -654,6 +770,7 @@ export default function DemandeRHForm() {
                   <option value="autorisation">Autorisation</option>
                   <option value="conges">Congés</option>
                   <option value="mission">Mission</option>
+                  <option value="avance_salaire">Avance sur salaire</option>
                 </select>
                 {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
               </div>
@@ -690,6 +807,8 @@ export default function DemandeRHForm() {
                 {errors.titre && <div className="error-message"><AlertCircle size={16} /> {errors.titre}</div>}
               </div>
 
+              {demandeFormData.type_demande !== 'avance_salaire' && (
+              <>
               {/* Dates */}
               <div className="form-grid">
                 <div className="form-section">
@@ -722,6 +841,71 @@ export default function DemandeRHForm() {
                   </div>
                 )}
               </div>
+
+              </>
+              )}
+
+              {demandeFormData.type_demande === 'avance_salaire' && (
+                <>
+                  <div className="form-section">
+                    <label className="form-label">Montant demandé (TND) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={avanceFormData.montant_demande}
+                      onChange={(e) => handleAvanceInputChange('montant_demande', e.target.value)}
+                      placeholder="Ex: 500.000"
+                      className={`form-input ${errors.montant_demande ? 'error' : ''}`}
+                    />
+                    {errors.montant_demande && <div className="error-message"><AlertCircle size={16} /> {errors.montant_demande}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">Mode de remboursement souhaité *</label>
+                    <textarea
+                      value={avanceFormData.mode_remboursement}
+                      onChange={(e) => handleAvanceInputChange('mode_remboursement', e.target.value)}
+                      rows="3"
+                      placeholder="Ex: remboursement sur 2 mois / retenue mensuelle de ... TND"
+                      className={`form-textarea ${errors.mode_remboursement ? 'error' : ''}`}
+                    />
+                    {errors.mode_remboursement && <div className="error-message"><AlertCircle size={16} /> {errors.mode_remboursement}</div>}
+                  </div>
+
+                  <div className="info-box">
+                    <div className="info-icon"><PenLine size={24} /></div>
+                    <div className="info-content">
+                      <h4>Signature et responsabilité</h4>
+                      <p>La signature ci-dessous confirme votre acceptation du montant demandé et votre responsabilité concernant le remboursement.</p>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">Signature demandeur *</label>
+                    <input
+                      type="text"
+                      value={avanceFormData.signature_demandeur}
+                      onChange={(e) => handleAvanceInputChange('signature_demandeur', e.target.value)}
+                      placeholder="Saisissez votre nom complet comme signature"
+                      className={`form-input ${errors.signature_demandeur ? 'error' : ''}`}
+                    />
+                    {errors.signature_demandeur && <div className="error-message"><AlertCircle size={16} /> {errors.signature_demandeur}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={avanceFormData.acceptation_responsabilite}
+                        onChange={(e) => handleAvanceInputChange('acceptation_responsabilite', e.target.checked)}
+                      />
+                      J'accepte la prise de responsabilité et les modalités de remboursement indiquées.
+                    </label>
+                    {errors.acceptation_responsabilite && <div className="error-message"><AlertCircle size={16} /> {errors.acceptation_responsabilite}</div>}
+                  </div>
+                </>
+              )}
 
               {demandeFormData.type_demande === 'conges' && (
                 <div className="form-section">
@@ -901,7 +1085,7 @@ export default function DemandeRHForm() {
                 ) : (
                   <>
                     <Send size={20} />
-                    <span>Soumettre la demande</span>
+                    <span>{demandeFormData.type_demande === 'avance_salaire' ? 'Soumettre la demande d'avance' : 'Soumettre la demande'}</span>
                   </>
                 )}
               </button>
