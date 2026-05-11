@@ -3,7 +3,8 @@ import logo from './logo_sts.png';
 import logoo from './logo_sts2.png';
 import { 
   Calendar, Clock, User, FileText, Send, CheckCircle, 
-  AlertCircle, FileCheck, Briefcase, File, Search, PenLine
+  AlertCircle, FileCheck, Briefcase, File, Search, PenLine,
+  TrendingUp, DollarSign
 } from 'lucide-react';
 import './DemandeRHForm.css';
 
@@ -212,6 +213,18 @@ export default function DemandeRHForm() {
     acceptation_responsabilite: false
   });
 
+  // ============================================
+  // NEW: États pour la demande de révision sur salaire
+  // ============================================
+  const [revisionFormData, setRevisionFormData] = useState({
+    salaire_actuel: '',
+    salaire_souhaite: '',
+    justification: '',
+    date_souhaitee: '',
+    documents_justificatifs: '',
+    acceptation_confirmation: false
+  });
+
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentSubmitted, setDocumentSubmitted] = useState(false);
 
@@ -376,7 +389,112 @@ export default function DemandeRHForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ============================================
+  // NEW: Validation pour révision sur salaire
+  // ============================================
+  const validateRevisionForm = () => {
+    const newErrors = {};
+
+    if (!selectedEmployee.id) newErrors.employe_id = 'Veuillez sélectionner un employé';
+    if (!demandeFormData.titre.trim()) newErrors.titre = 'Veuillez saisir le titre/motif de la demande';
+    if (!revisionFormData.salaire_actuel) {
+      newErrors.salaire_actuel = 'Veuillez indiquer votre salaire actuel';
+    } else if (parseFloat(revisionFormData.salaire_actuel) <= 0) {
+      newErrors.salaire_actuel = 'Le salaire doit être supérieur à 0';
+    }
+    if (!revisionFormData.salaire_souhaite) {
+      newErrors.salaire_souhaite = 'Veuillez indiquer le salaire souhaité';
+    } else if (parseFloat(revisionFormData.salaire_souhaite) <= parseFloat(revisionFormData.salaire_actuel)) {
+      newErrors.salaire_souhaite = 'Le salaire souhaité doit être supérieur au salaire actuel';
+    }
+    if (!revisionFormData.justification.trim()) {
+      newErrors.justification = 'Veuillez fournir une justification détaillée';
+    }
+    if (!revisionFormData.date_souhaitee) {
+      newErrors.date_souhaitee = 'Veuillez indiquer la date souhaitée pour la révision';
+    }
+    if (!revisionFormData.acceptation_confirmation) {
+      newErrors.acceptation_confirmation = 'Veuillez confirmer votre demande';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ============================================
+  // NEW: Submit pour révision sur salaire
+  // ============================================
+  const handleRevisionSubmit = async () => {
+    if (!validateRevisionForm()) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/demandes-revision-salaire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employe_id: selectedEmployee.id,
+          titre_motif: demandeFormData.titre,
+          salaire_actuel: parseFloat(revisionFormData.salaire_actuel),
+          salaire_souhaite: parseFloat(revisionFormData.salaire_souhaite),
+          justification: revisionFormData.justification,
+          date_souhaitee: revisionFormData.date_souhaitee,
+          documents_justificatifs: revisionFormData.documents_justificatifs || null,
+          date_demande: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          setDemandeFormData({
+            employe_id: '',
+            type_demande: '',
+            titre: '',
+            date_depart: '',
+            date_retour: '',
+            heure_depart: '',
+            heure_retour: '',
+            demi_journee: false,
+            type_conge: '',
+            type_conge_autre: '',
+            frais_deplacement: '',
+            nombre_jours: ''
+          });
+          setRevisionFormData({
+            salaire_actuel: '',
+            salaire_souhaite: '',
+            justification: '',
+            date_souhaitee: '',
+            documents_justificatifs: '',
+            acceptation_confirmation: false
+          });
+          setSearchTerm('');
+          setSelectedEmployee({ id: '', name: '', nom: '', prenom: '' });
+          setFilteredEmployees([]);
+        }, 4000);
+      } else {
+        alert(result.error || 'Erreur lors de la soumission de la demande de révision');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDemandeSubmit = async () => {
+    // NEW: Check if it's revision request
+    if (demandeFormData.type_demande === 'revision_salaire') {
+      await handleRevisionSubmit();
+      return;
+    }
+
     if (demandeFormData.type_demande === 'avance_salaire') {
       await handleAvanceSubmit();
       return;
@@ -614,6 +732,23 @@ export default function DemandeRHForm() {
   };
 
   // ============================================
+  // NEW: Handler for revision form inputs
+  // ============================================
+  const handleRevisionInputChange = (field, value) => {
+    setRevisionFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  // ============================================
   // FONCTIONS POUR LA SECTION DOCUMENTS
   // ============================================
 
@@ -771,6 +906,7 @@ export default function DemandeRHForm() {
                   <option value="conges">Congés</option>
                   <option value="mission">Mission</option>
                   <option value="avance_salaire">Avance sur salaire</option>
+                  <option value="revision_salaire">Révision sur salaire</option> {/* NEW OPTION */}
                 </select>
                 {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
               </div>
@@ -807,7 +943,8 @@ export default function DemandeRHForm() {
                 {errors.titre && <div className="error-message"><AlertCircle size={16} /> {errors.titre}</div>}
               </div>
 
-              {demandeFormData.type_demande !== 'avance_salaire' && (
+              {/* Dates - Hidden for avance_salaire and revision_salaire */}
+              {demandeFormData.type_demande !== 'avance_salaire' && demandeFormData.type_demande !== 'revision_salaire' && (
               <>
               {/* Dates */}
               <div className="form-grid">
@@ -841,10 +978,10 @@ export default function DemandeRHForm() {
                   </div>
                 )}
               </div>
-
               </>
               )}
 
+              {/* AVANCE SUR SALAIRE SECTION - Existing */}
               {demandeFormData.type_demande === 'avance_salaire' && (
                 <>
                   <div className="form-section">
@@ -903,6 +1040,120 @@ export default function DemandeRHForm() {
                       J'accepte la prise de responsabilité et les modalités de remboursement indiquées.
                     </label>
                     {errors.acceptation_responsabilite && <div className="error-message"><AlertCircle size={16} /> {errors.acceptation_responsabilite}</div>}
+                  </div>
+                </>
+              )}
+
+              {/* ============================================ */}
+              {/* NEW: RÉVISION SUR SALAIRE SECTION */}
+              {/* ============================================ */}
+              {demandeFormData.type_demande === 'revision_salaire' && (
+                <>
+                  <div className="info-box revision-info">
+                    <div className="info-icon"><TrendingUp size={24} /></div>
+                    <div className="info-content">
+                      <h4>Demande de révision salariale</h4>
+                      <p>Veuillez remplir tous les champs ci-dessous pour soumettre votre demande de révision de salaire. Cette demande sera étudiée par votre responsable hiérarchique et les RH.</p>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <DollarSign className="form-label-icon" />
+                      Salaire actuel (TND) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={revisionFormData.salaire_actuel}
+                      onChange={(e) => handleRevisionInputChange('salaire_actuel', e.target.value)}
+                      placeholder="Ex: 1500.000"
+                      className={`form-input ${errors.salaire_actuel ? 'error' : ''}`}
+                    />
+                    {errors.salaire_actuel && <div className="error-message"><AlertCircle size={16} /> {errors.salaire_actuel}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <TrendingUp className="form-label-icon" />
+                      Salaire souhaité (TND) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={revisionFormData.salaire_souhaite}
+                      onChange={(e) => handleRevisionInputChange('salaire_souhaite', e.target.value)}
+                      placeholder="Ex: 1800.000"
+                      className={`form-input ${errors.salaire_souhaite ? 'error' : ''}`}
+                    />
+                    {errors.salaire_souhaite && <div className="error-message"><AlertCircle size={16} /> {errors.salaire_souhaite}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <FileText className="form-label-icon" />
+                      Justification détaillée *
+                    </label>
+                    <textarea
+                      value={revisionFormData.justification}
+                      onChange={(e) => handleRevisionInputChange('justification', e.target.value)}
+                      rows="4"
+                      placeholder="Décrivez en détail les raisons de votre demande (ancienneté, performances, responsabilités additionnelles, formation, etc.)"
+                      className={`form-textarea ${errors.justification ? 'error' : ''}`}
+                    />
+                    {errors.justification && <div className="error-message"><AlertCircle size={16} /> {errors.justification}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <Calendar className="form-label-icon" />
+                      Date souhaitée pour la révision *
+                    </label>
+                    <input
+                      type="date"
+                      value={revisionFormData.date_souhaitee}
+                      onChange={(e) => handleRevisionInputChange('date_souhaitee', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className={`form-input ${errors.date_souhaitee ? 'error' : ''}`}
+                    />
+                    {errors.date_souhaitee && <div className="error-message"><AlertCircle size={16} /> {errors.date_souhaitee}</div>}
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label">
+                      <File className="form-label-icon" />
+                      Documents justificatifs (optionnel)
+                    </label>
+                    <textarea
+                      value={revisionFormData.documents_justificatifs}
+                      onChange={(e) => handleRevisionInputChange('documents_justificatifs', e.target.value)}
+                      rows="2"
+                      placeholder="Listez les documents que vous allez fournir (ex: certificats de formation, évaluations de performances, etc.)"
+                      className="form-textarea"
+                    />
+                    <small className="form-help">Vous pourrez joindre ces documents par email après soumission de la demande.</small>
+                  </div>
+
+                  <div className="info-box revision-highlight">
+                    <div className="info-icon"><CheckCircle size={24} /></div>
+                    <div className="info-content">
+                      <h4>Engagement du demandeur</h4>
+                      <p>En confirmant cette demande, je certifie que les informations fournies sont exactes et que ma demande de révision salariale est basée sur des éléments objectifs. Je comprends que cette demande sera étudiée dans le respect des procédures internes.</p>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={revisionFormData.acceptation_confirmation}
+                        onChange={(e) => handleRevisionInputChange('acceptation_confirmation', e.target.checked)}
+                      />
+                      Je confirme ma demande de révision sur salaire et j'accepte le traitement de ma demande selon la politique RH de l'entreprise.
+                    </label>
+                    {errors.acceptation_confirmation && <div className="error-message"><AlertCircle size={16} /> {errors.acceptation_confirmation}</div>}
                   </div>
                 </>
               )}
@@ -1085,7 +1336,13 @@ export default function DemandeRHForm() {
                 ) : (
                   <>
                     <Send size={20} />
-                    <span>{demandeFormData.type_demande === 'avance_salaire' ? 'Soumettre la demande d\'avance' : 'Soumettre la demande'}</span>
+                    <span>
+                      {demandeFormData.type_demande === 'avance_salaire' 
+                        ? 'Soumettre la demande d\'avance' 
+                        : demandeFormData.type_demande === 'revision_salaire'
+                        ? 'Soumettre la demande de révision'
+                        : 'Soumettre la demande'}
+                    </span>
                   </>
                 )}
               </button>
