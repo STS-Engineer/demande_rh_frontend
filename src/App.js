@@ -1058,7 +1058,6 @@ export default function DemandeRHForm() {
                   <option value="conges">Congés</option>
                   <option value="mission">Mission</option>
                   <option value="avance_salaire">Avance sur salaire</option>
-                  <option value="revision_salaire">Révision sur salaire</option> {/* NEW OPTION */}
                 </select>
                 {errors.type_demande && <div className="error-message"><AlertCircle size={16} /> {errors.type_demande}</div>}
               </div>
