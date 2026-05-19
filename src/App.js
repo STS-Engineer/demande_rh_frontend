@@ -1117,7 +1117,7 @@ export default function DemandeRHForm() {
                   <div className="form-section">
                     <label className="form-label">
                       <Calendar className="form-label-icon" />
-                      Date de retour *
+                      Date de reprise de travail *
                     </label>
                     <input
                       type="date"
