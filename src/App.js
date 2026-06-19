@@ -9,7 +9,52 @@ import {
 import './DemandeRHForm.css';
 
 // URL de l'API - utilise la variable d'environnement en production, localhost en développement
-const API_BASE_URL = 'https://hr-back.azurewebsites.net';
+const API_BASE_URL = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:5001'
+  : 'https://hr-back.azurewebsites.net';
+const getTenantFromPath = () => {
+  const path = window.location.pathname.toLowerCase();
+  const firstSegment = path.split('/').filter(Boolean)[0] || '';
+  const tenantAliases = {
+    tunisia: 'tunisia',
+    tunisie: 'tunisia',
+    tn: 'tunisia',
+    china: 'china',
+    cn: 'china',
+    germany: 'germany',
+    deutschland: 'germany',
+    de: 'germany',
+    france: 'france',
+    fr: 'france',
+    india: 'india',
+    in: 'india',
+    korea: 'korea',
+    kr: 'korea',
+    'south-korea': 'korea',
+    luxembourg: 'luxembourg',
+    lu: 'luxembourg',
+    mexico: 'mexico',
+    mx: 'mexico'
+  };
+
+  if (tenantAliases[firstSegment]) {
+    return tenantAliases[firstSegment];
+  }
+
+  return 'tunisia';
+};
+const TENANT = getTenantFromPath();
+const apiFetch = (endpoint, options = {}) => {
+  const headers = {
+    ...(options.headers || {}),
+    'X-Tenant': TENANT
+  };
+
+  return fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers
+  });
+};
 
 // ============================================
 // CHANGE 1: Added countWorkingDays helper function
@@ -252,7 +297,7 @@ export default function DemandeRHForm() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/employees/actifs`);
+      const response = await apiFetch('/api/employees/actifs');
       if (!response.ok) throw new Error('Erreur réseau');
       const data = await response.json();
       setEmployees(data);
@@ -468,7 +513,7 @@ export default function DemandeRHForm() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/demandes-revision-salaire`, {
+      const response = await apiFetch('/api/demandes-revision-salaire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -571,7 +616,7 @@ export default function DemandeRHForm() {
         demi_journee: isDemiJournee ? true : (demandeFormData.demi_journee || false)
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/demandes`, {
+      const response = await apiFetch('/api/demandes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend)
@@ -715,7 +760,7 @@ export default function DemandeRHForm() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/demandes-avance-salaire`, {
+      const response = await apiFetch('/api/demandes-avance-salaire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -812,7 +857,7 @@ export default function DemandeRHForm() {
         employe_id: documentSelectedEmployee.id
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/generer-attestation`, {
+      const response = await apiFetch('/api/generer-attestation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend)
