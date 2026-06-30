@@ -11,6 +11,7 @@ import './DemandeRHForm.css';
 // URL de l'API - privilégie une variable d'environnement, puis le backend local, puis la prod
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
+  process.env.REACT_APP_API_URL ||
   (process.env.NODE_ENV === 'development'
     ? 'http://localhost:5001'
     : 'https://hr-back.azurewebsites.net');
