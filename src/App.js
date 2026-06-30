@@ -8,10 +8,12 @@ import {
 } from 'lucide-react';
 import './DemandeRHForm.css';
 
-// URL de l'API - utilise la variable d'environnement en production, localhost en développement
-const API_BASE_URL = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:5001'
-  : 'https://hr-back.azurewebsites.net';
+// URL de l'API - privilégie une variable d'environnement, puis le backend local, puis la prod
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5001'
+    : 'https://hr-back.azurewebsites.net');
 const getTenantFromPath = () => {
   const path = window.location.pathname.toLowerCase();
   const firstSegment = path.split('/').filter(Boolean)[0] || '';
